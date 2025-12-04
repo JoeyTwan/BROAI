@@ -40,6 +40,16 @@ jobs:
           VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:4000' }}
           GITHUB_PAGES: 'true'
         run: npm run build
+        
+      - name: Verify build output
+        run: |
+          echo "检查构建输出..."
+          ls -la frontend/dist/
+          if [ ! -f "frontend/dist/index.html" ]; then
+            echo "❌ 错误：构建输出中没有 index.html"
+            exit 1
+          fi
+          echo "✅ 构建输出验证成功"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
