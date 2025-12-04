@@ -27,4 +27,9 @@ node_modules/
 dist/
 build/
 
+# 旧版本文件（单文件版本，已废弃）
+index.html
+config.js
+server/
+
 
