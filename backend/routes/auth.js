@@ -75,6 +75,8 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body ?? {};
   
+  console.log('[登录请求]', { email, hasPassword: !!password });
+  
   // 参数验证
   if (!email || !password) {
     return res.status(400).json({ 
@@ -86,6 +88,8 @@ router.post('/login', async (req, res) => {
 
   try {
     const user = await verifyCredentials(email, password);
+    console.log('[登录验证结果]', { userFound: !!user });
+    
     if (!user) {
       return res.status(401).json({ 
         success: false,

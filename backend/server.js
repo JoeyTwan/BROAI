@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 const aiRoutes = require('./routes/ai');
 const usageRoutes = require('./routes/usage');
 const conversationRoutes = require('./routes/conversations');
+const feedbackRoutes = require('./routes/feedback');
 const { startDailyResetScheduler } = require('./utils/scheduler');
 
 const app = express();
@@ -64,6 +65,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/usage', usageRoutes);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // 健康检查端点（用于部署平台监控）
 app.get('/health', (req, res) => {
@@ -75,20 +77,38 @@ app.get('/health', (req, res) => {
   });
 });
 
+// 在根路径之前添加静态文件服务配置
+// 生产环境：提供前端静态文件
+if (process.env.NODE_ENV === 'production') {
+  const frontendBuildPath = path.join(__dirname, '../frontend/dist');
+  console.log(`📦 Serving frontend from ${frontendBuildPath}`);
+  app.use(express.static(frontendBuildPath));
+  
+  // 处理前端路由（SPA）
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+  });
+}
+
 // 根路径
 app.get('/', (req, res) => {
-  res.json({
-    name: 'ClarityAI Backend API',
-    version: '1.0.0',
-    status: 'running',
-    endpoints: {
-      auth: '/api/auth',
-      ai: '/api/ai',
-      usage: '/api/usage',
-      conversations: '/api/conversations',
-      health: '/health'
-    }
-  });
+  if (process.env.NODE_ENV === 'production') {
+    res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+  } else {
+    res.json({
+      name: 'BRO AI Backend API',
+      version: '1.0.0',
+      status: 'running',
+        endpoints: {
+        auth: '/api/auth',
+        ai: '/api/ai',
+        usage: '/api/usage',
+        conversations: '/api/conversations',
+        feedback: '/api/feedback',
+        health: '/health'
+      }
+    });
+  }
 });
 
 // 404处理

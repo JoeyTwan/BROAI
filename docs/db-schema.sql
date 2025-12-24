@@ -75,3 +75,19 @@ create index if not exists idx_conversations_created_at on public.conversations 
 create index if not exists idx_messages_conversation_id on public.messages (conversation_id);
 create index if not exists idx_messages_order_index on public.messages (conversation_id, order_index);
 
+-- Feedback (用户反馈表)
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references public.users(id) on delete set null,
+  content text not null,
+  status text not null default 'pending' check (status in ('pending', 'reviewed', 'resolved')),
+  likes integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_feedback_user_id on public.feedback (user_id);
+create index if not exists idx_feedback_created_at on public.feedback (created_at desc);
+create index if not exists idx_feedback_status on public.feedback (status);
+create index if not exists idx_feedback_likes on public.feedback (likes desc, created_at desc);
+

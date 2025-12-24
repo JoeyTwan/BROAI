@@ -80,18 +80,6 @@ export const WeChatDialog = ({ open, onClose, userId, userEmail }: WeChatDialogP
             </svg>
             <p>扫码添加微信，一起交流学习</p>
           </div>
-          {userId && (
-            <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-3">
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">你的用户ID：</p>
-              <p className="font-mono text-sm text-slate-900 dark:text-white break-all">{userId}</p>
-              {userEmail && (
-                <>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 mt-2">你的邮箱：</p>
-                  <p className="font-mono text-sm text-slate-900 dark:text-white break-all">{userEmail}</p>
-                </>
-              )}
-            </div>
-          )}
         </div>
 
         {/* 操作按钮 */}

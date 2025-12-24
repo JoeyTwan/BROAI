@@ -20,11 +20,36 @@ async function authenticate(req, res, next) {
 }
 
 async function verifyCredentials(email, password) {
-  const user = await findByEmail(email);
-  if (!user) return null;
-  const match = await bcrypt.compare(password, user.password_hash);
-  if (!match) return null;
-  return { id: user.id, email: user.email };
+  console.log('[验证凭证]', { email, hasPassword: !!password });
+  try {
+    const user = await findByEmail(email);
+    console.log('[用户查找结果]', { userFound: !!user, user });
+    
+    if (!user) {
+      console.log('[验证失败] 用户不存在:', email);
+      return null;
+    }
+    
+    // 检查密码哈希是否存在
+    if (!user.password_hash) {
+      console.log('[验证失败] 用户没有密码哈希:', user.id);
+      return null;
+    }
+    
+    const match = await bcrypt.compare(password, user.password_hash);
+    console.log('[密码匹配结果]', { match });
+    
+    if (!match) {
+      console.log('[验证失败] 密码不匹配:', email);
+    }
+    
+    return match ? { id: user.id, email: user.email } : null;
+  } catch (error) {
+    console.error('[验证错误] 发生异常:', error.message);
+    console.error('[错误堆栈]', error.stack);
+    // 为了安全，不暴露详细错误给客户端，直接返回null
+    return null;
+  }
 }
 
 module.exports = {

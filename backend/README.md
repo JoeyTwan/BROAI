@@ -1,4 +1,4 @@
-# ClarityAI 后端服务
+# BRO AI 后端服务
 
 Node.js + Express + Supabase 后端服务，提供用户认证、AI对话和用量限制功能。
 

@@ -1,4 +1,4 @@
-# ClarityAI - 智能需求澄清助手
+# BRO AI - 智能需求澄清助手
 
 基于通义千问（Qwen）的AI聊天助手，通过多轮对话澄清用户需求并生成高质量内容。
 
@@ -43,7 +43,7 @@
 1. 访问 [Supabase](https://app.supabase.com)
 2. 点击 **New Project** 创建新项目
 3. 填写项目信息：
-   - **Name**: ClarityAI（或任意名称）
+   - **Name**: BRO AI（或任意名称）
    - **Database Password**: 设置一个强密码（**务必保存**）
    - **Region**: 选择离你最近的区域
 4. 等待项目创建完成（约 2 分钟）

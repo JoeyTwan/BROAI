@@ -7,6 +7,7 @@ import { UsageBadge } from './components/UsageBadge';
 import { AuthDialog } from './components/AuthDialog';
 import { UserMenu } from './components/UserMenu';
 import { WeChatDialog } from './components/WeChatDialog';
+import { Feedback } from './components/Feedback';
 
 const CLARIFICATION_PROMPT = `你是一个专业的需求澄清助手。当用户提出模糊需求时，必须严格遵守以下规则：
 
@@ -210,6 +211,7 @@ const App = () => {
   const [limitExceeded, setLimitExceeded] = useState(false);
   const [weChatOpen, setWeChatOpen] = useState(false);
   const [hasShownWeChatPrompt, setHasShownWeChatPrompt] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>('');
   const [hoveredId, setHoveredId] = useState<string | null>(null);
@@ -368,6 +370,8 @@ const App = () => {
       }
     }
   };
+
+  // 处理反馈提交（移到Feedback组件内部处理）
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('确定要删除这个对话吗？')) return;
@@ -704,7 +708,12 @@ const App = () => {
                   {usage.dailyUsed}/{usage.limit}
                 </span>
               </div>
-              <UserMenu user={user} onLogout={logout} onContactWeChat={() => setWeChatOpen(true)} />
+            <UserMenu 
+              user={user} 
+              onLogout={logout} 
+              onContactWeChat={() => setWeChatOpen(true)}
+              onFeedback={() => setShowFeedback(true)}
+            />
             </div>
           ) : (
             <div className="space-y-3">
@@ -749,6 +758,28 @@ const App = () => {
                 
               </p>
 
+              {/* 引导文字点击条 */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                <button
+                  onClick={() => setInput('给我来一个产品介绍文案')}
+                  className="px-4 py-2 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors shadow-sm"
+                >
+                  给我来一个产品介绍文案
+                </button>
+                <button
+                  onClick={() => setInput('给我整一个市场调研方案')}
+                  className="px-4 py-2 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors shadow-sm"
+                >
+                  给我整一个市场调研方案
+                </button>
+                <button
+                  onClick={() => setInput('给我弄一个旅游攻略')}
+                  className="px-4 py-2 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors shadow-sm"
+                >
+                  给我弄一个旅游攻略
+                </button>
+              </div>
+
               {/* 输入区域 */}
               <div className="space-y-4">
                 <div className="relative rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -763,7 +794,7 @@ const App = () => {
                         ? '请先登录以使用AI功能'
                         : limitExceeded || usage.dailyUsed >= usage.limit
                         ? '今日额度已用完，请明天再来'
-                        : '跟哥们儿说说心里话...'
+                        : '给哥们儿说说心里话...'
                     }
                     className="w-full resize-none rounded-2xl border-0 bg-transparent px-5 py-4 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     rows={4}
@@ -949,12 +980,29 @@ const App = () => {
         error={error}
       />
 
-      <WeChatDialog
+        <WeChatDialog
         open={weChatOpen}
         onClose={() => setWeChatOpen(false)}
-        userId={user?.id}
-        userEmail={user?.email}
       />
+        {showFeedback && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowFeedback(false)}
+            ></div>
+            <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl p-8">
+              <button
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                onClick={() => setShowFeedback(false)}
+              >
+                <svg className="w-5 h-5 text-slate-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <Feedback isAuthenticated={isAuthenticated} user={user} />
+            </div>
+          </div>
+        )}
     </div>
   );
 };

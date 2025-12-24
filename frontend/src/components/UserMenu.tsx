@@ -6,9 +6,11 @@ interface UserMenuProps {
   };
   onLogout: () => void;
   onContactWeChat?: () => void;
+  onFeedback?: () => void;
+  onShowAdmin?: () => void;
 }
 
-export const UserMenu = ({ user, onLogout, onContactWeChat }: UserMenuProps) => {
+export const UserMenu = ({ user, onLogout, onContactWeChat, onFeedback, onShowAdmin }: UserMenuProps) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const displayName = user.email.split('@')[0] || user.email;
@@ -71,6 +73,21 @@ export const UserMenu = ({ user, onLogout, onContactWeChat }: UserMenuProps) => 
               <span>联系哥们儿</span>
             </button>
           )}
+          {onFeedback && (
+            <button
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"
+              onClick={() => {
+                onFeedback();
+                setOpen(false);
+              }}
+            >
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600 text-sm">
+                💡
+              </span>
+              <span>用户反馈</span>
+            </button>
+          )}
+          {/* 移除单独的查看反馈菜单项，合并到用户反馈中 */}
           <button
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition"
             onClick={() => {
