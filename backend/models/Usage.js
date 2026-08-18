@@ -1,306 +1,164 @@
-const { supabase } = require('../config/database');
+const { db } = require('../config/database');
 
-// 临时使用内存数据库（用于本地开发测试，仅在Supabase连接失败时使用）
-const MEMORY_USAGE = new Map(); // key: user_id, value: usage object
-const MEMORY_LOGS = []; // 存储API调用日志
-
-// 常量定义
-const USAGE_TABLE = 'user_usage';
-const LOG_TABLE = 'api_logs';
-const DAILY_LIMIT = 100; // 每日调用限制
-const RESET_TIME = '00:00'; // 重置时间（UTC时间）
-
-/**
- * 检查并增加用户用量
- * @param {string|number} userId - 用户ID
- * @returns {Object} - 包含success和remaining字段的对象
- */
-async function checkAndIncrementUsage(userId) {
-  try {
-    // 优先使用Supabase
-    console.log('[Supabase] 检查并增加用户用量:', userId);
-    
-    const today = new Date().toISOString().split('T')[0]; // 格式: YYYY-MM-DD
-
-    // 获取用户用量记录
-    const { data: existing, error: fetchError } = await supabase
-      .from(USAGE_TABLE)
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    let currentCount = 0;
-    let needsReset = false;
-
-    if (fetchError) {
-      if (fetchError.code === 'PGRST116') { // 未找到记录，创建新记录
-        console.log('[Supabase] 用户首次使用，创建新的用量记录');
-      } else {
-        throw fetchError;
-      }
-    } else {
-      // 检查是否需要重置今日用量
-      needsReset = existing.last_reset_date !== today;
-      currentCount = needsReset ? 0 : existing.daily_count;
-    }
-
-    // 检查是否超过限制
-    if (currentCount >= DAILY_LIMIT) {
-      console.log('[Supabase] 用户用量已达上限:', userId, currentCount, '/', DAILY_LIMIT);
-      return { success: false, remaining: 0 };
-    }
-
-    // 更新用量
-    const newDailyCount = currentCount + 1;
-    const newTotalCount = existing ? existing.total_count + 1 : 1;
-    
-    if (existing) {
-      // 更新现有记录
-      const { error: updateError } = await supabase
-        .from(USAGE_TABLE)
-        .update({
-          daily_count: newDailyCount,
-          total_count: newTotalCount,
-          last_reset_date: today,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-
-      if (updateError) {
-        throw updateError;
-      }
-    } else {
-      // 创建新记录
-      const { error: insertError } = await supabase
-        .from(USAGE_TABLE)
-        .insert({
-          user_id: userId,
-          daily_count: newDailyCount,
-          total_count: newTotalCount,
-          last_reset_date: today,
-          updated_at: new Date().toISOString()
-        });
-
-      if (insertError) {
-        throw insertError;
-      }
-    }
-
-    const remaining = DAILY_LIMIT - newDailyCount;
-    console.log('[Supabase] 增加用量成功:', userId, newDailyCount, '/', DAILY_LIMIT, '剩余:', remaining);
-    return { success: true, remaining };
-  } catch (error) {
-    // Supabase失败时，使用内存数据库
-    console.error('[Supabase] 检查并增加用户用量失败，切换到内存数据库:', error);
-    
-    const now = new Date();
-    const today = now.toISOString().split('T')[0]; // 格式: YYYY-MM-DD
-    
-    // 获取用户今日用量
-    let usage = MEMORY_USAGE.get(userId);
-    
-    if (!usage || usage.date !== today) {
-      // 初始化或重置今日用量
-      usage = {
-        user_id: userId,
-        count: 0,
-        date: today,
-        updated_at: now.toISOString()
-      };
-      MEMORY_USAGE.set(userId, usage);
-      console.log('[内存数据库] 初始化今日用量:', userId, today);
-    }
-    
-    // 检查是否超过限制
-    if (usage.count >= DAILY_LIMIT) {
-      console.log('[内存数据库] 用户用量已达上限:', userId, usage.count, '/', DAILY_LIMIT);
-      return { success: false, remaining: 0 };
-    }
-    
-    // 增加用量计数
-    usage.count += 1;
-    usage.updated_at = now.toISOString();
-    MEMORY_USAGE.set(userId, usage);
-    
-    const remaining = DAILY_LIMIT - usage.count;
-    console.log('[内存数据库] 增加用量成功:', userId, usage.count, '/', DAILY_LIMIT, '剩余:', remaining);
-    
-    return { success: true, remaining };
-  }
-}
-
-/**
- * 记录API调用日志
- */
-async function logUsage(userId, payload = {}) {
-  try {
-    // 优先使用Supabase
-    console.log('[Supabase] 记录API调用日志:', userId);
-    
-    const logData = {
-      user_id: userId,
-      endpoint: payload.endpoint || '/api/ai/chat',
-      input_tokens: payload.input_tokens || 0,
-      output_tokens: payload.output_tokens || 0,
-      timestamp: new Date().toISOString()
-    };
-
-    const { error } = await supabase.from(LOG_TABLE).insert(logData);
-    if (error) {
-      throw error;
-    }
-    console.log('[Supabase] API日志已记录:', userId);
-    return true;
-  } catch (error) {
-    // Supabase失败时，使用内存数据库
-    console.error('[Supabase] 记录API调用日志失败，切换到内存数据库:', error);
-    
-    const logData = {
-      user_id: userId,
-      endpoint: payload.endpoint || '/api/ai/chat',
-      input_tokens: payload.input_tokens || 0,
-      output_tokens: payload.output_tokens || 0,
-      timestamp: new Date().toISOString()
-    };
-    
-    MEMORY_LOGS.push(logData);
-    console.log('[内存数据库] API日志已记录:', userId);
-    
-    return true;
-  }
-}
-
-/**
- * 获取当前用量信息（不增加计数）
- */
-async function getCurrentUsage(userId) {
-  try {
-    // 优先使用Supabase
-    console.log('[Supabase] 获取当前用量信息:', userId);
-    
-    const today = new Date().toISOString().split('T')[0]; // 格式: YYYY-MM-DD
-
-    // 获取用户用量记录
-    const { data: existing, error: fetchError } = await supabase
-      .from(USAGE_TABLE)
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (fetchError) {
-      if (fetchError.code === 'PGRST116') { // 未找到记录
-        console.log('[Supabase] 用户用量记录不存在');
-        return {
-          dailyUsed: 0,
-          remaining: DAILY_LIMIT,
-          totalUsed: 0,
-          limit: DAILY_LIMIT,
-          resetTime: getTomorrowDate()
-        };
-      } else {
-        throw fetchError;
-      }
-    }
-
-    // 检查是否需要重置今日用量
-    const needsReset = existing.last_reset_date !== today;
-    const dailyUsed = needsReset ? 0 : existing.daily_count;
-    const remaining = Math.max(0, DAILY_LIMIT - dailyUsed);
-
-    return {
-      dailyUsed,
-      remaining,
-      totalUsed: existing.total_count || 0,
-      limit: DAILY_LIMIT,
-      resetTime: getTomorrowDate()
-    };
-  } catch (error) {
-    // Supabase失败时，使用内存数据库
-    console.error('[Supabase] 获取当前用量信息失败，切换到内存数据库:', error);
-    
-    const now = new Date();
-    const today = now.toISOString().split('T')[0]; // 格式: YYYY-MM-DD
-    
-    // 获取用户今日用量
-    let usage = MEMORY_USAGE.get(userId);
-    
-    if (!usage || usage.date !== today) {
-      // 初始化或重置今日用量
-      usage = {
-        user_id: userId,
-        count: 0,
-        date: today,
-        updated_at: now.toISOString()
-      };
-      MEMORY_USAGE.set(userId, usage);
-    }
-    
-    const remaining = DAILY_LIMIT - usage.count;
-    
-    return {
-      dailyUsed: usage.count,
-      remaining,
-      totalUsed: usage.count, // 内存数据库中不跟踪总用量
-      limit: DAILY_LIMIT,
-      resetTime: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0).toISOString()
-    };
-  }
-}
-
-/**
- * 每日重置任务（可选，用于确保数据一致性）
- * 建议使用定时任务（如 node-cron）在每日 00:00 执行
- */
-async function resetDailyUsage() {
-  try {
-    // 优先使用Supabase
-    console.log('[Supabase] 执行每日用量重置任务');
-    
-    // 由于我们使用date字段来跟踪每日用量，不需要显式重置
-    // 新的一天会自动创建新的记录
-    console.log('[Supabase] 每日用量重置完成（基于date字段自动管理）');
-    return { success: true, resetDate: getTodayDate() };
-  } catch (error) {
-    // Supabase失败时，使用内存数据库
-    console.error('[Supabase] 执行每日用量重置任务失败，切换到内存数据库:', error);
-    
-    const now = new Date();
-    const today = now.toISOString().split('T')[0]; // 格式: YYYY-MM-DD
-    
-    for (const [userId, usage] of MEMORY_USAGE) {
-      if (usage.date !== today) {
-        MEMORY_USAGE.set(userId, {
-          user_id: userId,
-          count: 0,
-          date: today,
-          updated_at: now.toISOString()
-        });
-      }
-    }
-    
-    console.log('[内存数据库] 每日用量重置完成');
-    return { success: true, resetDate: today };
-  }
-}
-
-// 获取今天的日期字符串 (YYYY-MM-DD)
-function getTodayDate() {
+function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// 获取明天的日期字符串，用于计算重置时间
-function getTomorrowDate() {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-  return tomorrow.toISOString();
+function getUsageRow(userId) {
+  let row = db.prepare('SELECT * FROM user_usage WHERE user_id = ?').get(userId);
+  const t = today();
+  if (!row) {
+    db.prepare(
+      'INSERT INTO user_usage (user_id, daily_count, total_count, last_reset_date) VALUES (?, 0, 0, ?)'
+    ).run(userId, t);
+    row = db.prepare('SELECT * FROM user_usage WHERE user_id = ?').get(userId);
+  }
+  if (row.last_reset_date !== t) {
+    db.prepare(
+      'UPDATE user_usage SET daily_count = 0, last_reset_date = ?, updated_at = datetime(\'now\') WHERE user_id = ?'
+    ).run(t, userId);
+    row = db.prepare('SELECT * FROM user_usage WHERE user_id = ?').get(userId);
+  }
+  return row;
+}
+
+function checkAndIncrementUsage(userId, dailyLimit) {
+  const limit = Number(dailyLimit) || 30;
+  const row = getUsageRow(userId);
+  if (row.daily_count >= limit) {
+    return { success: false, remaining: 0, dailyCount: row.daily_count, totalCount: row.total_count };
+  }
+  db.prepare(
+    'UPDATE user_usage SET daily_count = daily_count + 1, total_count = total_count + 1, updated_at = datetime(\'now\') WHERE user_id = ?'
+  ).run(userId);
+  const updated = getUsageRow(userId);
+  return {
+    success: true,
+    dailyCount: updated.daily_count,
+    totalCount: updated.total_count,
+    remaining: Math.max(0, limit - updated.daily_count)
+  };
+}
+
+function getCurrentUsage(userId, dailyLimit) {
+  const limit = Number(dailyLimit) || 30;
+  const row = getUsageRow(userId);
+  return {
+    dailyUsed: row.daily_count,
+    remaining: Math.max(0, limit - row.daily_count),
+    totalUsed: row.total_count,
+    limit,
+    resetTime: new Date(new Date().setHours(24, 0, 0, 0)).toISOString()
+  };
+}
+
+function logUsage(userId, payload = {}) {
+  const { endpoint, input_tokens, output_tokens, model, cost_cents, duration_ms, error, device_id } = payload;
+  db.prepare(
+    `INSERT INTO api_logs
+    (date, user_id, device_id, endpoint, model, input_tokens, output_tokens, cost_cents, duration_ms, error)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    today(),
+    userId,
+    device_id || null,
+    endpoint || '/api/ai/chat',
+    model || null,
+    Number(input_tokens) || 0,
+    Number(output_tokens) || 0,
+    Number(cost_cents) || 0,
+    Number(duration_ms) || null,
+    error || null
+  );
+  return true;
+}
+
+function resetDailyUsage() {
+  const t = today();
+  db.prepare(
+    'UPDATE user_usage SET daily_count = 0, last_reset_date = ?, updated_at = datetime(\'now\') WHERE last_reset_date <> ?'
+  ).run(t, t);
+  return { success: true, resetDate: t };
+}
+
+function getBudget(dateStr = today()) {
+  let row = db.prepare('SELECT * FROM daily_budget WHERE date = ?').get(dateStr);
+  if (!row) {
+    const cap = Number(process.env.DAILY_BUDGET_CNY_CENTS) || 300;
+    db.prepare('INSERT INTO daily_budget (date, spent_cents, cap_cents) VALUES (?, 0, ?)').run(dateStr, cap);
+    row = db.prepare('SELECT * FROM daily_budget WHERE date = ?').get(dateStr);
+  }
+  return row;
+}
+
+function addBudgetSpend(cents, dateStr = today()) {
+  getBudget(dateStr);
+  db.prepare('UPDATE daily_budget SET spent_cents = spent_cents + ? WHERE date = ?').run(
+    Math.max(0, Number(cents) || 0),
+    dateStr
+  );
+  return getBudget(dateStr);
+}
+
+function setBudgetCap(capCents, dateStr = today()) {
+  getBudget(dateStr);
+  db.prepare('UPDATE daily_budget SET cap_cents = ? WHERE date = ?').run(
+    Math.max(0, Number(capCents) || 0),
+    dateStr
+  );
+  return getBudget(dateStr);
+}
+
+function getBudgetStats(days = 7) {
+  const rows = db
+    .prepare(
+      'SELECT date, spent_cents, cap_cents FROM daily_budget ORDER BY date DESC LIMIT ?'
+    )
+    .all(days);
+  const users = db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
+  const totalCalls = db.prepare('SELECT COUNT(*) AS c FROM api_logs').get().c;
+  return { days: rows, users, totalCalls };
+}
+
+function touchDeviceLimit(deviceId) {
+  const now = new Date();
+  const day = today();
+  const ts = now.toISOString();
+  let row = db.prepare('SELECT * FROM device_limits WHERE device_id = ?').get(deviceId);
+  if (!row || row.day !== day) {
+    db.prepare(
+      `INSERT INTO device_limits (device_id, day, calls, window_starts_at, window_calls)
+       VALUES (?, ?, 1, ?, 1)
+       ON CONFLICT(device_id) DO UPDATE SET
+        day=excluded.day, calls=1, window_starts_at=excluded.window_starts_at, window_calls=1`
+    ).run(deviceId, day, ts);
+    return { calls: 1, windowCalls: 1, overDay: false, overWindow: false };
+  }
+  // 滑动窗口：30秒 内不超过 3 次
+  const WINDOW_MS = 30 * 1000;
+  const WINDOW_MAX = 3;
+  const DAY_MAX = Number(process.env.DEVICE_DAY_MAX) || 25;
+  const windowStart = row.window_starts_at ? new Date(row.window_starts_at).getTime() : now.getTime();
+  const newWindowCalls = now.getTime() - windowStart > WINDOW_MS ? 1 : row.window_calls + 1;
+  const newWindowStart = newWindowCalls === 1 ? ts : row.window_starts_at;
+  const nextCalls = row.calls + 1;
+  const overDay = nextCalls > DAY_MAX;
+  const overWindow = newWindowCalls > WINDOW_MAX;
+  db.prepare(
+    'UPDATE device_limits SET day=?, calls=?, window_starts_at=?, window_calls=? WHERE device_id=?'
+  ).run(day, nextCalls, newWindowStart, Math.min(newWindowCalls, 999), deviceId);
+  return { calls: nextCalls, windowCalls: newWindowCalls, overDay, overWindow };
 }
 
 module.exports = {
+  today,
   checkAndIncrementUsage,
-  logUsage,
   getCurrentUsage,
+  logUsage,
   resetDailyUsage,
-  getTodayDate,
-  getTomorrowDate
+  getBudget,
+  addBudgetSpend,
+  setBudgetCap,
+  getBudgetStats,
+  touchDeviceLimit
 };

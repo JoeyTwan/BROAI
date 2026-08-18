@@ -4,7 +4,13 @@
 .env.production
 .env.development
 
-# 配置文件（如果包含密钥）
+# 数据库文件（SQLite 单文件）
+backend/data/*.db
+backend/data/*.db-shm
+backend/data/*.db-wal
+backend/data/
+
+# 本地配置
 config.local.js
 
 # 操作系统文件
@@ -22,14 +28,13 @@ Thumbs.db
 *.log
 npm-debug.log*
 
-# 依赖目录（如果使用构建工具）
+# 构建产物 / 依赖
 node_modules/
 dist/
 build/
+frontend/dist/
 
-# 旧版本文件（单文件版本，已废弃）
-index.html
-config.js
-server/
+# 临时
+.trae/documents/
 
 

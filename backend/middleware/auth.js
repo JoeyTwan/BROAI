@@ -1,60 +1,41 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const { findByEmail, getById } = require('../models/User');
+const crypto = require('crypto');
+const { upsertUserByDevice } = require('../models/User');
+
+function normalizeDeviceId(raw) {
+  if (!raw) return '';
+  const trimmed = String(raw).trim().slice(0, 128);
+  if (!trimmed) return '';
+  return trimmed;
+}
+
+function hashDeviceFallback(req) {
+  const ua = String(req.headers['user-agent'] || 'no-ua');
+  const lang = String(req.headers['accept-language'] || 'zh');
+  const ip = String(
+    req.headers['x-forwarded-for'] ||
+      req.headers['x-real-ip'] ||
+      req.socket?.remoteAddress ||
+      '0.0.0.0'
+  ).split(',')[0].trim();
+  return crypto.createHash('sha256').update(`${ua}|${lang}|${ip}`, 'utf8').digest('hex').slice(0, 40);
+}
 
 async function authenticate(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    return res.status(401).json({ message: '未提供身份令牌' });
-  }
+  const raw = req.headers['x-device-id'];
+  let deviceId = normalizeDeviceId(raw);
+  if (!deviceId) deviceId = hashDeviceFallback(req);
   try {
-    const token = header.split(' ')[1];
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await getById(payload.sub);
-    if (!user) return res.status(401).json({ message: '用户不存在或已注销' });
-    req.user = user;
+    const user = upsertUserByDevice(deviceId);
+    req.user = {
+      id: user.id,
+      device_id: user.device_id,
+      nickname: user.nickname
+    };
     next();
-  } catch (error) {
-    return res.status(401).json({ message: '令牌无效或已过期' });
+  } catch (err) {
+    console.error('[authenticate]', err);
+    res.status(500).json({ success: false, error: 'AUTH_FAILED', message: '身份识别失败' });
   }
 }
 
-async function verifyCredentials(email, password) {
-  console.log('[验证凭证]', { email, hasPassword: !!password });
-  try {
-    const user = await findByEmail(email);
-    console.log('[用户查找结果]', { userFound: !!user, user });
-    
-    if (!user) {
-      console.log('[验证失败] 用户不存在:', email);
-      return null;
-    }
-    
-    // 检查密码哈希是否存在
-    if (!user.password_hash) {
-      console.log('[验证失败] 用户没有密码哈希:', user.id);
-      return null;
-    }
-    
-    const match = await bcrypt.compare(password, user.password_hash);
-    console.log('[密码匹配结果]', { match });
-    
-    if (!match) {
-      console.log('[验证失败] 密码不匹配:', email);
-    }
-    
-    return match ? { id: user.id, email: user.email } : null;
-  } catch (error) {
-    console.error('[验证错误] 发生异常:', error.message);
-    console.error('[错误堆栈]', error.stack);
-    // 为了安全，不暴露详细错误给客户端，直接返回null
-    return null;
-  }
-}
-
-module.exports = {
-  authenticate,
-  verifyCredentials
-};
-
-
+module.exports = { authenticate, normalizeDeviceId, hashDeviceFallback };

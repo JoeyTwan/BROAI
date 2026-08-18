@@ -1,87 +1,43 @@
-const bcrypt = require('bcryptjs');
-const { supabase } = require('../config/database');
+const { db } = require('../config/database');
 
-// 临时使用内存数据库（用于本地开发测试，当Supabase不可用时自动切换）
-const MEMORY_USERS = [];
-let nextId = 1;
-
-const TABLE = 'users';
-
-const sanitizeEmail = (email) => email.trim().toLowerCase();
-
-async function createUser(email, password) {
-  const passwordHash = await bcrypt.hash(password, 10);
-  
-  try {
-    // 优先使用Supabase实现
-    const { data, error } = await supabase
-      .from(TABLE)
-      .insert({ email: sanitizeEmail(email), password_hash: passwordHash })
-      .select('id, email')
-      .single();
-    
-    if (error) throw error;
-    console.log('[Supabase] 用户已创建:', data.email);
-    return data;
-  } catch (error) {
-    console.warn('[Supabase] 创建用户失败，切换到内存数据库:', error.message);
-    
-    // 回退到内存数据库
-    const newUser = {
-      id: nextId++,
-      email: sanitizeEmail(email),
-      password_hash: passwordHash,
-      created_at: new Date().toISOString()
-    };
-    
-    MEMORY_USERS.push(newUser);
-    console.log('[内存数据库] 用户已创建:', newUser.email);
-    return { id: newUser.id, email: newUser.email };
-  }
+function today() {
+  return new Date().toISOString().slice(0, 10);
 }
 
-async function findByEmail(email) {
-  try {
-    // 优先使用Supabase实现
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select('*')
-      .eq('email', sanitizeEmail(email))
-      .single();
-    
-    if (error) throw error;
-    console.log('[Supabase] 查找用户:', sanitizeEmail(email), '结果:', !!data);
-    return data;
-  } catch (error) {
-    console.warn('[Supabase] 查找用户失败，切换到内存数据库:', error.message);
-    
-    // 回退到内存数据库
-    const user = MEMORY_USERS.find(user => user.email === sanitizeEmail(email));
-    console.log('[内存数据库] 查找用户:', sanitizeEmail(email), '结果:', !!user);
-    return user || null;
-  }
+function upsertUserByDevice(deviceId, nickname) {
+  const existing = db.prepare('SELECT * FROM users WHERE device_id = ?').get(deviceId);
+  if (existing) return existing;
+  const info = db
+    .prepare('INSERT INTO users (device_id, nickname) VALUES (?, ?)')
+    .run(deviceId, nickname || '兄弟');
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
 }
 
-async function getById(id) {
-  try {
-    // 优先使用Supabase实现
-    const { data, error } = await supabase.from(TABLE).select('id, email').eq('id', id).single();
-    
-    if (error) throw error;
-    console.log('[Supabase] 根据ID查找用户:', id, '结果:', !!data);
-    return data;
-  } catch (error) {
-    console.warn('[Supabase] 根据ID查找用户失败，切换到内存数据库:', error.message);
-    
-    // 回退到内存数据库
-    const user = MEMORY_USERS.find(user => user.id === id);
-    console.log('[内存数据库] 根据ID查找用户:', id, '结果:', !!user);
-    return user ? { id: user.id, email: user.email } : null;
-  }
+function getByDevice(deviceId) {
+  return db.prepare('SELECT * FROM users WHERE device_id = ?').get(deviceId) || null;
 }
 
-module.exports = {
-  createUser,
-  findByEmail,
-  getById
-};
+function getById(id) {
+  return db.prepare('SELECT id, device_id, nickname, created_at FROM users WHERE id = ?').get(id) || null;
+}
+
+function setNickname(id, nickname) {
+  db.prepare('UPDATE users SET nickname = ?, updated_at = datetime(?) WHERE id = ?').run(
+    nickname || '兄弟',
+    'now',
+    id
+  );
+  return getById(id);
+}
+
+function listUsers(limit = 100) {
+  return db
+    .prepare(
+      `SELECT u.id, u.device_id, u.nickname, u.created_at,
+        COALESCE((SELECT SUM(input_tokens+output_tokens) FROM api_logs l WHERE l.user_id = u.id),0) AS total_tokens
+      FROM users u ORDER BY u.created_at DESC LIMIT ?`
+    )
+    .all(limit);
+}
+
+module.exports = { upsertUserByDevice, getByDevice, getById, setNickname, listUsers, today };

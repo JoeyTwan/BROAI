@@ -1,501 +1,228 @@
-# BRO AI - 智能需求澄清助手
+# 兄弟 AI · BroAI
 
-基于通义千问（Qwen）的AI聊天助手，通过多轮对话澄清用户需求并生成高质量内容。
+> 给家里人（爸妈 / 爷爷奶奶）用的 AI 小助手。不用注册、不用会打字，微信扫一扫就能直接说话使唤。
 
-## ✨ 功能特性
-
-- 🤖 **智能需求澄清**：通过多轮对话了解真实需求
-- 💬 **流式输出**：打字机效果展示AI回复
-- 🎨 **美观界面**：支持亮色/暗色主题切换
-- 📝 **会话管理**：支持新建、重命名、置顶、删除会话
-- 🔒 **用户系统**：注册/登录、JWT认证、用量限制
-- 📊 **用量统计**：实时显示每日剩余次数（100次/天）
+![slogan](https://img.shields.io/badge/产品定位-家人专用_🫶-blueviolet) ![tech](https://img.shields.io/badge/技术栈-Node·SQLite·React·Vite-darkcyan) ![llm](https://img.shields.io/badge/LLM 对接-OpenAI_兼容协议_(阿里云百炼·DeepSeek·等)-orange)
 
 ---
 
-## 🚀 快速开始（新手完整指南）
+## ✨ 一句话能做啥
 
-### 前置要求
+三句话说清这个产品：
 
-在开始之前，请确保已安装：
+1. **微信扫码就用，零学习成本**。打开微信扫一扫 → 进网页 → 点麦克风/直接打字，没有注册、没有验证码、没有教程。
+2. **你说不清楚，我帮你问**。不是甩给你一个空聊天框让你写提示词，而是一步步唠，直到信息够了才给结果。
+3. **结果是卡片，不是一大坨文字**。做行程就给你「每天去哪、注意啥」的卡片；做菜就给你「食材表 + 步骤」的卡片；写信就给你「可以直接复制发微信的版本」。
 
-- **Node.js** 18+ 和 npm（[下载地址](https://nodejs.org/)）
-- **Git**（[下载地址](https://git-scm.com/)）
-- 一个 **Supabase** 账号（免费，[注册地址](https://app.supabase.com)）
-- 一个 **通义千问 API 密钥**（[获取地址](https://dashscope.aliyun.com)）
+内置了三个家里人最常用的场景：
 
----
-
-## 📋 详细部署步骤
-
-### 第一步：获取 API 密钥和数据库配置
-
-#### 1.1 获取通义千问 API 密钥
-
-1. 访问 [Dashscope 控制台](https://dashscope.aliyun.com)
-2. 登录/注册账号
-3. 进入 **API-KEY 管理**
-4. 创建新的 API Key，格式类似：`sk-7dfe8fcbb30e4f5493c1e9350c544114`
-5. **复制并保存**这个密钥，稍后会用到
-
-#### 1.2 创建 Supabase 项目
-
-1. 访问 [Supabase](https://app.supabase.com)
-2. 点击 **New Project** 创建新项目
-3. 填写项目信息：
-   - **Name**: BRO AI（或任意名称）
-   - **Database Password**: 设置一个强密码（**务必保存**）
-   - **Region**: 选择离你最近的区域
-4. 等待项目创建完成（约 2 分钟）
-
-#### 1.3 获取 Supabase 配置信息
-
-1. 在 Supabase 项目页面，点击左侧 **Settings**（齿轮图标）
-2. 点击 **API**
-3. 找到以下信息并复制：
-   - **Project URL** → 这就是 `SUPABASE_URL`
-     - 格式：`https://xxxxx.supabase.co`
-   - **service_role key** → 这就是 `SUPABASE_KEY`
-     - 点击 **Reveal** 显示完整密钥
-     - **注意**：使用 `service_role` key，不是 `anon` key
+| 🧳 做行程 | 🍲 做菜谱 | 💌 写封信 |
+|--------|--------|--------|
+| 目的地 / 天数 / 跟谁去 / 预算…… 自动出每日安排 | 冰箱里有啥就能给你菜，食材 + 步骤 + 小贴士 | 给孩子/孙子孙女写两句话，分成「念出来」和「发微信」两个版本 |
 
 ---
 
-### 第二步：克隆项目并安装依赖
+## 🖥 界面是啥样的（一图看懂）
+
+```mermaid
+flowchart LR
+    A[微信扫一扫] --> B[打开首页]
+    B --> C{怎么选}
+    C -->|大按钮直接戳| D[🧳 做行程]
+    C -->|大按钮直接戳| E[🍲 做菜谱]
+    C -->|大按钮直接戳| F[💌 写封信]
+    C -->|话筒说一句| G[语音输入]
+    D --> H[我一步一步问你<br/>一次只问一个问题]
+    E --> H
+    F --> H
+    G --> H
+    H --> I[信息齐了<br/>生成结构化卡片]
+    I --> J[📅 行程表/🥗 食材步骤/📝 两段文字]
+    I --> K[🔊 可以念给你听]
+```
+
+给你看管理员填 API Key 的那个页：
+
+```mermaid
+flowchart TD
+    A[访问 /admin] --> B[① 填管理员口令]
+    B --> C{有阿里云 Key 吗}
+    C -->|有| D[② 点「阿里云百炼」模板自动填好]
+    C -->|没有| E[② 选其它模板/手动填]
+    D --> F[③ 粘贴 API Key]
+    E --> F
+    F --> G[④ 点 连通测试]
+    G -->|OK| H[⑤ 点 保存配置]
+    H --> I[⑥ 点 生成分享二维码]
+    I --> J[💾 下载 SVG / 打印出来贴冰箱]
+```
+
+---
+
+## 🚀 从零到能扫二维码：5 步
+
+> 下面每一步都做过冒烟测试，照着走就能跑起来。电脑上装了 Node.js 18+ 就行。
+
+### 1️⃣ 克隆 + 装依赖
 
 ```bash
-# 1. 克隆项目（如果还没有）
-git clone <项目地址>
-cd ClarityAI-2
+git clone <你 Fork 后的仓库地址>
+cd BroAI
 
-# 2. 安装后端依赖
+# 后端依赖
 cd backend
 npm install
+cp env.template .env           # 复制配置模板（生产环境记得改 ADMIN_TOKEN！）
+cd ..
 
-# 3. 安装前端依赖
-cd ../frontend
+# 前端依赖
+cd frontend
 npm install
+cp env.template .env.local     # 默认连本地 4000 端口，一般不用改
+cd ..
 ```
 
----
+### 2️⃣ 填你自己的 API Key（阿里云百炼为例）
 
-### 第三步：配置后端环境变量
+1. 先启动后端：
+   ```bash
+   cd backend
+   npm start
+   ```
+2. 浏览器打开 `http://localhost:4000/admin`
+3. 在「① 管理员鉴权」填 `broai-admin-2025`（**生产环境务必改 `backend/.env` 里的 `ADMIN_TOKEN`**）
+4. 「② 选模板」点第一个 **阿里云百炼（兼容模式，推荐）**
+5. 「③ LLM 接口」里粘贴你阿里云控制台拿到的 **API Key**
+6. 点 **连通测试** → 没报错就点 **保存配置**
 
-#### 3.1 创建后端 .env 文件
+> 如果你用的是 DeepSeek / 硅基流动 / 自搭的 OpenAI 兼容服务，模板里都有现成条目，填 Key 即可。模型名按自己购买的填。
 
-```bash
-cd backend
-cp env.template .env
-```
-
-#### 3.2 编辑 .env 文件
-
-使用你喜欢的编辑器打开 `backend/.env`，填写以下配置：
-
-```env
-# 服务器端口（默认即可）
-PORT=4000
-
-# 前端地址（本地开发默认即可）
-CLIENT_URL=http://localhost:5173
-
-# Supabase 配置（从第一步获取）
-SUPABASE_URL=https://你的项目.supabase.co
-SUPABASE_KEY=你的service_role_key
-
-# 通义千问 API 配置（从第一步获取）
-OPENAI_API_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
-OPENAI_API_KEY=sk-你的API密钥
-OPENAI_MODEL=qwen-plus
-
-# JWT 密钥（生成随机字符串）
-# 运行命令生成：openssl rand -base64 32
-JWT_SECRET=替换为随机生成的字符串
-
-# 每日使用限制
-DAILY_LIMIT=100
-
-# 环境
-NODE_ENV=development
-
-# 启用定时任务（每日重置用量）
-ENABLE_SCHEDULER=true
-```
-
-**生成 JWT_SECRET**：
-
-```bash
-# macOS/Linux
-openssl rand -base64 32
-
-# Windows (PowerShell)
-[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
-```
-
-将生成的字符串复制到 `JWT_SECRET=` 后面。
-
----
-
-### 第四步：初始化数据库
-
-#### 4.1 在 Supabase 中执行 SQL
-
-1. 在 Supabase 项目页面，点击左侧 **SQL Editor**
-2. 点击 **New query**
-3. 打开项目中的 `docs/db-schema.sql` 文件
-4. **复制全部内容**到 SQL Editor
-5. 点击 **Run** 执行
-6. 应该看到成功提示：`Success. No rows returned`
-
-#### 4.2 验证表是否创建成功
-
-1. 在 Supabase 左侧菜单，点击 **Table Editor**
-2. 应该能看到以下表：
-   - `users` - 用户表
-   - `user_usage` - 用户用量表
-   - `api_logs` - API 日志表
-
----
-
-### 第五步：启动后端服务
-
-```bash
-cd backend
-npm run dev
-```
-
-**成功标志**：终端应该显示：
-
-```
-✅ Backend listening on port 4000
-```
-
-**测试后端**：在浏览器访问 `http://localhost:4000/health`
-
-应该返回 JSON：
-```json
-{
-  "status": "ok",
-  "timestamp": "...",
-  "uptime": ...,
-  "environment": "development"
-}
-```
-
-如果看到这个响应，说明后端运行正常！✅
-
----
-
-### 第六步：配置并启动前端
-
-#### 6.1 创建前端 .env 文件
+### 3️⃣ 启动本地前端看看效果
 
 ```bash
 cd frontend
-echo "VITE_API_URL=http://localhost:4000" > .env
+npm run dev        # 打开 http://localhost:5173
 ```
 
-或者手动创建 `frontend/.env` 文件，内容：
+首页就能看到三个漂亮大卡片，点一个试试。
 
-```env
-VITE_API_URL=http://localhost:4000
-```
-
-#### 6.2 启动前端开发服务器
+### 4️⃣ 打包生产 + 一体部署（推荐，一个服务搞定）
 
 ```bash
 cd frontend
-npm run dev
+npm run build      # 产物在 frontend/dist
+cd ../backend
+NODE_ENV=production PORT=4000 npm start
 ```
 
-**成功标志**：终端应该显示：
+- `NODE_ENV=production` 时，后端会自动把 `../frontend/dist` 当静态文件托管
+- 访问 `http://<你的服务器IP>:4000` 就能直接用
+- 管理页：`http://<你的服务器IP>:4000/admin`
+- 二维码页：`http://<你的服务器IP>:4000/qrcode`
 
-```
-  VITE v5.x.x  ready in xxx ms
+### 5️⃣ 生成二维码 → 发给她 / 打印贴冰箱
 
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-```
+访问 `http://<你的域名或IP>:4000/qrcode`
 
-#### 6.3 打开应用
-
-在浏览器访问：`http://localhost:5173`
+- **💾 下载 SVG**：可以发家庭群，让她长按图片识别二维码（微信支持）
+- **🖨 打印出来**：贴冰箱 / 电话机旁边，想聊天就拿手机扫一下
 
 ---
 
-### 第七步：注册账号并开始使用
+## 🏗 技术选型 & 为什么这么做
 
-1. **注册账号**：
-   - 点击右上角 **登录/注册**
-   - 切换到 **注册** 标签
-   - 输入邮箱和密码（至少 6 位）
-   - 点击 **注册**
+| 模块 | 用了啥 | 为啥选它 |
+|---|---|---|
+| 后端 | Node.js + Express | 生态成熟、改起来快，一台小机器就跑 |
+| 数据库 | SQLite（单文件 WAL 模式） | 不装 MySQL / Postgres / Supabase，部署就一个文件夹，备份就拷一个文件 |
+| 鉴权 | 浏览器设备指纹（device_id） | 老人不懂注册/验证码。能扫码就能用。 |
+| LLM | OpenAI 兼容协议（Axios） | 一次写好，阿里云 / DeepSeek / 硅基流动… 都能切 |
+| 成本保护 | 全局单日预算 + 单设备日次上限 + 滑动窗口 | 防止误点、恶意刷，一天花多少自己说了算 |
+| 前端 | React + Vite + Tailwind | 构建快、体积小、界面好调 |
+| 语音 | 浏览器原生 Web Speech API | 不用装额外 SDK，iOS Safari / Android Chrome 都能用 |
 
-2. **开始使用**：
-   - 注册成功后会自动登录
-   - 右上角显示今日剩余次数（100/100）
-   - 在输入框输入你的需求
-   - AI 会通过多轮对话澄清需求
-   - 最终生成你需要的內容
-
----
-
-## 🔧 常见问题排查
-
-### 问题 1：注册时提示"网络错误"
-
-**可能原因**：
-- 后端服务未启动
-- 前端 API 地址配置错误
-- 数据库连接失败
-
-**解决步骤**：
-
-1. **检查后端是否运行**：
-   ```bash
-   cd backend
-   npm run dev
-   ```
-   应该看到 `✅ Backend listening on port 4000`
-
-2. **测试后端连接**：
-   浏览器访问 `http://localhost:4000/health`
-   如果无法访问，检查端口是否被占用
-
-3. **检查环境变量**：
-   ```bash
-   cd backend
-   npm run check-env
-   ```
-   确保所有必需变量都已填写
-
-4. **检查前端配置**：
-   确认 `frontend/.env` 中的 `VITE_API_URL` 正确
-
-5. **查看浏览器控制台**：
-   - 按 F12 打开开发者工具
-   - 查看 **Console** 和 **Network** 标签
-   - 找到错误信息
-
-### 问题 2：数据库连接失败
-
-**症状**：后端日志显示 Supabase 连接错误
-
-**解决方案**：
-
-1. 检查 `SUPABASE_URL` 和 `SUPABASE_KEY` 是否正确
-2. 确认使用的是 `service_role` key，不是 `anon` key
-3. 检查 Supabase 项目是否正常运行
-4. 确认已执行 `docs/db-schema.sql` 创建表结构
-
-### 问题 3：CORS 错误
-
-**症状**：浏览器控制台显示 CORS 相关错误
-
-**解决方案**：
-
-1. 检查后端 `.env` 中的 `CLIENT_URL`
-2. 确保 `CLIENT_URL` 包含前端地址（如：`http://localhost:5173`）
-3. 重启后端服务
-
-### 问题 4：JWT 错误
-
-**症状**：登录后立即被登出
-
-**解决方案**：
-
-1. 检查 `JWT_SECRET` 是否设置
-2. 清除浏览器 localStorage：
-   ```javascript
-   // 在浏览器控制台运行
-   localStorage.clear()
-   ```
-3. 重新注册/登录
-
-### 问题 5：API 调用失败
-
-**症状**：AI 回复失败或报错
-
-**解决方案**：
-
-1. 检查 `OPENAI_API_KEY` 是否正确
-2. 检查 `OPENAI_API_URL` 是否正确（Dashscope 地址）
-3. 确认 API 密钥有足够余额
-4. 查看后端日志中的详细错误信息
-
----
-
-## 📁 项目结构
+### 目录结构
 
 ```
-ClarityAI-2/
-├── index.html               # 旧版静态界面（可直接打开）
-├── config.js               # 旧版前端 API 配置
-│
-├── backend/                # 后端服务（Node.js + Express）
-│   ├── server.js           # 主服务器文件
-│   ├── routes/             # API 路由
-│   │   ├── auth.js         # 认证路由（注册/登录）
-│   │   ├── ai.js           # AI 聊天路由
-│   │   └── usage.js        # 用量查询路由
-│   ├── models/             # 数据模型
-│   │   ├── User.js         # 用户模型
-│   │   └── Usage.js        # 用量模型
-│   ├── middleware/         # 中间件
-│   │   ├── auth.js         # JWT 认证
-│   │   └── rateLimit.js    # 用量限制
-│   ├── config/             # 配置
-│   │   └── database.js     # Supabase 客户端
-│   ├── utils/              # 工具函数
-│   │   ├── openai.js       # AI API 调用
-│   │   └── scheduler.js    # 定时任务
-│   ├── env.template        # 环境变量模板
-│   ├── railway.toml        # Railway 部署配置
-│   └── Procfile            # Render 部署配置
-│
-├── frontend/               # 前端应用（React + Vite）
+BroAI/
+├── backend/                 ← 后端服务（Express + SQLite）
+│   ├── server.js            ← 入口、路由总装配
+│   ├── config/database.js   ← SQLite 建表 + 配置读写
+│   ├── models/              ← 用户 / 对话 / 用量 / 反馈
+│   ├── middleware/          ← 设备指纹鉴权 / 预算+限流
+│   ├── routes/              ← auth / ai / admin / conversations / usage / feedback
+│   ├── utils/openai.js      ← LLM 客户端（OpenAI 兼容）+ 成本估算
+│   └── env.template         ← 后端环境变量模板
+├── frontend/                ← 前端（React + Vite + Tailwind）
 │   ├── src/
-│   │   ├── App.tsx         # 主应用组件
-│   │   ├── components/     # React 组件
-│   │   │   ├── AuthDialog.tsx    # 登录/注册对话框
-│   │   │   ├── UsageBadge.tsx    # 用量显示
-│   │   │   └── UserMenu.tsx      # 用户菜单
-│   │   ├── hooks/          # React Hooks
-│   │   │   └── useAuth.ts  # 认证状态管理
-│   │   ├── api/            # API 客户端
-│   │   │   └── client.ts   # Axios 配置
-│   │   └── types.ts        # TypeScript 类型定义
-│   ├── .env                # 前端环境变量
-│   └── vite.config.ts      # Vite 配置
-│
-├── docs/                   # 文档
-│   └── db-schema.sql       # 数据库表结构
-│
-├── DEPLOYMENT.md           # 生产部署详细指南
-├── DEPLOY_QUICKSTART.md    # 5分钟快速部署指南
-├── TROUBLESHOOTING.md      # 故障排查指南
-├── SECURITY.md             # 安全说明
-└── README.md               # 本文件
+│   │   ├── App.tsx          ← 主界面：场景选择 + 聊天 + 语音
+│   │   ├── pages/AdminSetup.tsx   ← /admin 配置 API Key
+│   │   ├── pages/QrCode.tsx       ← /qrcode 生成分享二维码
+│   │   └── components/            ← 场景卡片 / 结果卡片（行程·菜谱·写信）
+│   └── env.template         ← 前端环境变量模板
+└── docs/
+    └── db-schema.sql        ← 数据库表结构（仅阅读，代码会自动建表）
 ```
 
 ---
 
-## 🚀 生产环境部署
+## 💸 成本是怎么算的？花冒了怎么办
 
-### 快速部署（5分钟）
+给你的 LLM 配置里，有两个单价字段：`输入单价（元/1K tokens）` 和 `输出单价`。
 
-查看 [DEPLOY_QUICKSTART.md](./DEPLOY_QUICKSTART.md) 获取快速部署指南
+每次模型返回后，按实际用量估算成「分」，然后累加到当天的「单日预算」里。超过预算，今天就不再受理，首页会提示。
 
-### 完整部署指南
+除了全局预算，还有**单设备单日调用次数上限**（默认 25 次）和 **1 分钟滑动窗口限流**，三层一起兜着。
 
-查看 [DEPLOYMENT.md](./DEPLOYMENT.md) 获取详细步骤
-
-### 推荐部署架构
-
-- **前端**: Vercel（自动 HTTPS + CDN）
-- **后端**: Railway / Render（Node.js 服务器）
-- **数据库**: Supabase（PostgreSQL，已配置）
+- 所有消耗都会写入 SQLite 的 `api_logs` 表。想看明细？直接用任何 SQLite 可视化工具打开 `backend/data/broai.db` 即可。
+- 配置在 `/admin` 页面改完立即生效，不用重启服务。
 
 ---
 
-## 🔒 安全注意事项
+## 🔐 安全与隐私
 
-⚠️ **重要**：纯前端项目中的API密钥仍然可以被查看！
-
-**推荐方案**：
-- ✅ **开发/内部工具**：使用环境变量配置
-- ✅ **生产/公开部署**：使用后端代理API调用（本项目已实现）
-
-详细说明请查看 [SECURITY.md](./SECURITY.md)
-
----
-
-## 🛠️ 技术栈
-
-- **前端**：React 18 + Vite + Tailwind CSS
-- **后端**：Node.js 18 + Express + PostgreSQL (Supabase)
-- **认证**：JWT + bcrypt
-- **AI**：通义千问 Dashscope 兼容接口
-- **部署**：Vercel (前端) + Railway/Render (后端)
+- **API Key 存哪**：存在后端 SQLite 的 `app_config` 表里，不和前端代码一起打包，前端拿不到。
+- **管理员页怎么防进**：请求头里要带正确的 `X-Admin-Token`（和后端 `.env` 里的 `ADMIN_TOKEN` 一致）。没有带或带错，一律 403。
+- **生产部署前必须做**：
+  1. 改 `backend/.env` 的 `ADMIN_TOKEN` 为一串随机长字符串；
+  2. 前面套一个 Nginx / Caddy，上 HTTPS（微信扫码只允许 HTTPS 页面调用麦克风）；
+  3. 把 `CLIENT_URL` 改成你的域名，防止随便跨域。
+- **本地数据**：所有聊天记录 / 设备 ID 都在你自己服务器上，不发到第三方。
 
 ---
 
-## 📝 API 端点说明
+## 🧪 常见问题（FAQ）
 
-### 认证相关
+**Q：微信扫完二维码，打开了但是麦克风按钮点了没反应？**
+A：微信浏览器对未授权的域名会禁用麦克风。确保你的域名是 **HTTPS**，并且在微信弹出的权限对话框里允许使用麦克风。另外 iOS 微信对某些国产模型的语音识别支持较差，可以改用键盘打字，体验也一样 ok。
 
-- `POST /api/auth/register` - 用户注册
-- `POST /api/auth/login` - 用户登录
-- `GET /api/auth/me` - 获取当前用户信息（需要认证）
+**Q：二维码生成出来了，但换个手机扫打不开？**
+A：检查三件事：① 服务器公网 IP 是否放行防火墙（通常是 TCP 80 / 443）；② `CLIENT_URL` 改成了正确的域名；③ 你的后端是不是真的绑在 `0.0.0.0` 上（一般默认是，除非你改了 VPS 网络配置）。
 
-### AI 相关
+**Q：想换模型，还需要重启后端吗？**
+A：不用。去 `/admin` 改模型名、单价，点「保存配置」就生效了。
 
-- `POST /api/ai/chat` - AI 聊天接口（需要认证，自动检查用量限制）
+**Q：我妈说「今天 3 元额度用完了」咋回事？**
+A：默认每天总预算是 3 元（300 分）。去 `/admin` 把「单日总预算」改大一点，点保存就行，当天立刻生效。
 
-### 用量相关
-
-- `GET /api/usage/current` - 获取当前用量统计（需要认证）
-
-### 健康检查
-
-- `GET /health` - 服务健康状态
+**Q：数据库想备份 / 想搬家？**
+A：整个项目最值钱的就是 `backend/data/broai.db` 这一个文件。拷贝它就是完整备份。搬家把这个文件放到新机器的相同目录就行。
 
 ---
 
-## 📖 使用说明
+## 🤝 二次开发建议
 
-### 基本使用流程
-
-1. **注册/登录账号**
-   - 首次使用需要注册
-   - 注册后自动登录
-
-2. **开始对话**
-   - 在输入框输入你的需求
-   - AI 会通过多轮对话澄清需求
-   - 每次只问一个关键问题
-
-3. **查看用量**
-   - 右上角显示今日剩余次数
-   - 每日 00:00 自动重置
-   - 超出限制时会有友好提示
-
-4. **管理会话**
-   - 左侧会话列表可以：
-     - 新建会话
-     - 重命名会话
-     - 置顶会话
-     - 删除会话
-
-### 用量限制
-
-- **每日免费额度**：100 次调用
-- **重置时间**：每日 00:00（服务器时间）
-- **超出限制**：显示友好提示，等待次日重置
+- **加场景**：改 `backend/routes/ai.js` 里的场景提示词 + `frontend/src/components/ScenePicker.tsx` + `CardSwitch.tsx` 里加一种新卡片类型。基本用的就是**策略模式**，加一个场景基本不碰其他模块。
+- **换 UI 风格**：只改 `frontend/src/styles.css` 和组件里的 Tailwind 类，后端零改动。
+- **接微信公众号 / 企业微信 / 飞书**：后端 API 是 HTTP JSON，你在外面包一层机器人适配器即可，复用 `/api/ai/chat` 全家桶。
 
 ---
 
-## 🤝 贡献
+## 📄 开源协议 & 致谢
 
-欢迎提交 Issue 和 Pull Request！
+本项目是 MIT 协议。随便用、随便改、商用也不用打招呼，但 **后果自负**，不承担任何因 API 花费、数据丢失、服务故障导致的责任。
 
----
+这个项目的初心特别简单——就是为了让自己的妈也能用上 AI。
+愿你的家里人，点开这个网页，听到那句「嘿，张阿姨」的时候，也能会心一笑。
 
-## 📄 许可证
-
-MIT License
-
----
-
-## 💡 获取帮助
-
-如果遇到问题：
-
-1. 查看 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) 故障排查指南
-2. 检查浏览器控制台和后端日志
-3. 确认所有环境变量都已正确配置
-4. 提交 Issue 描述问题
-
----
-
-**祝你使用愉快！** 🎉
+❤️ 兄弟 AI，给家里人用的 AI。
