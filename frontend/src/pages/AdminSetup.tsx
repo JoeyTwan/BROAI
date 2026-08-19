@@ -17,14 +17,14 @@ const PRESETS = [
     name: '阿里云百炼（兼容模式，推荐）',
     baseUrl:
       'https://llm-da9pcbh2g3f45npf.cn-beijing.maas.aliyuncs.com/compatible-mode/v1',
-    model: 'qwen-plus',
+    model: 'qwen3.7-plus',
     inputPrice: 0.0008,
     outputPrice: 0.002
   },
   {
     name: '阿里 DashScope 通用兼容',
     baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    model: 'qwen-plus',
+    model: 'qwen3.7-plus',
     inputPrice: 0.0008,
     outputPrice: 0.002
   },

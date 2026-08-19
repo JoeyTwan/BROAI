@@ -108,6 +108,30 @@ CREATE TABLE IF NOT EXISTS device_limits (
 
 init();
 
+// 一次性迁移：把老的 qwen-plus / qwen-max 升级到阿里云百炼当前仍有免费额度的新模型
+(function migrateLegacyModels() {
+  const rows = db.prepare("SELECT key, value FROM app_config WHERE key = ?").all('llm.model');
+  if (!rows.length) return;
+  const row = rows[0];
+  let current;
+  try {
+    current = JSON.parse(row.value);
+  } catch (_e) {
+    current = row.value;
+  }
+  const UPGRADE_MAP = {
+    'qwen-plus': 'qwen3.7-plus',
+    'qwen-max': 'qwen3.7-max-2026-06-08',
+    'qwen-turbo': 'qwen3.7-flash-2026-07-15'
+  };
+  if (UPGRADE_MAP[current]) {
+    const next = UPGRADE_MAP[current];
+    db.prepare("UPDATE app_config SET value = ?, updated_at = datetime('now') WHERE key = 'llm.model'")
+      .run(JSON.stringify(next));
+    console.log(`[broai] 模型自动升级：${current} → ${next}`);
+  }
+})();
+
 function setConfig(key, value) {
   const stmt = db.prepare(`
     INSERT INTO app_config (key, value, updated_at) VALUES (?, ?, datetime('now'))
