@@ -54,8 +54,10 @@ app.use(
   cors({
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') return cb(null, true);
-      cb(new Error('Not allowed by CORS'));
+      const isLocalhost = origin && /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?$/.test(origin.replace(/^https?:\/\//, ''));
+      if (isLocalhost) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error('Not allowed by CORS: ' + origin));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -141,7 +143,7 @@ app.use((_req, res) => {
 
 app.use((err, req, res, _next) => {
   console.error('[Error]', { message: err.message, path: req.path, method: req.method });
-  if (err.message === 'Not allowed by CORS') {
+  if (err.message && err.message.startsWith('Not allowed by CORS')) {
     return res.status(403).json({ success: false, error: 'CORS_ERROR', message: '跨域请求被拒绝' });
   }
   res.status(err.status || 500).json({
