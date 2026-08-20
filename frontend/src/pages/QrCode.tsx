@@ -21,7 +21,7 @@ const QrCode: React.FC = () => {
     const blob = new Blob([s], { type: 'image/svg+xml;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = '兄弟AI-扫码入口.svg';
+    a.download = '省心聊-扫码入口.svg';
     a.click();
   }
 
@@ -37,17 +37,17 @@ const QrCode: React.FC = () => {
           扫码就能用，不用输网址
         </h1>
         <p className="mt-3 text-slate-400 text-sm md:text-base">
-          把这张图发到家庭群，或者打印出来贴冰箱。她拿微信扫一扫，直接就能跟兄弟AI唠。
+          把这张图发到家庭群，或者打印出来贴冰箱。她拿微信扫一扫，直接就能用。
         </p>
 
         <div className="mt-8 mx-auto bro-card rounded-3xl p-8 md:p-12 w-fit print:shadow-none">
           <div className="flex items-center justify-center gap-4 mb-6">
             <div className="h-14 w-14 rounded-2xl scene-gradient-travel flex items-center justify-center font-bold text-white text-xl shadow-lg">
-              Bro
+              省
             </div>
             <div className="text-left">
-              <div className="text-xs tracking-[0.3em] text-slate-400 uppercase">BroAI</div>
-              <div className="text-xl font-semibold">兄弟 AI · 家里人专用</div>
+              <div className="text-xs tracking-[0.3em] text-slate-400 uppercase">省心聊</div>
+              <div className="text-xl font-semibold">想到啥就说啥</div>
             </div>
           </div>
           <div className="bg-white p-5 rounded-2xl inline-block">

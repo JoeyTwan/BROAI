@@ -86,7 +86,7 @@ app.get('/health', (_req, res) => {
 
 if (process.env.NODE_ENV === 'production') {
   const frontendBuildPath = path.join(__dirname, '../frontend/dist');
-  console.log(`[broai] 提供前端静态文件：${frontendBuildPath}`);
+  console.log(`[省心聊] 提供前端静态文件：${frontendBuildPath}`);
   app.use(express.static(frontendBuildPath));
   app.get(/^\/(?!api).*/, (_req, res) => {
     res.sendFile(path.join(frontendBuildPath, 'index.html'));
@@ -94,7 +94,7 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   app.get('/', (_req, res) => {
     res.json({
-      name: '兄弟AI (BroAI) Backend API',
+      name: '省心聊 Backend API',
       version: '2.0.0',
       status: 'running',
       endpoints: {
@@ -138,7 +138,7 @@ try { resetDailyUsage(); } catch (_e) {}
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   const cfg = loadLLMConfig();
-  console.log(`✅ 兄弟AI (BroAI) 后端已启动： http://localhost:${port}`);
+  console.log(`✅ 省心聊 后端已启动： http://localhost:${port}`);
   console.log(`   LLM 配置就绪：${isSetupReady(cfg) ? '是' : '否（请先访问 /admin 配置 API Key）'}`);
   console.log(`   全局单日预算上限：${cfg.budgetCents} 分 / 单设备单日：${cfg.deviceDayCap} 次`);
 });

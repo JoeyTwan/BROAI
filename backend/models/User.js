@@ -9,7 +9,7 @@ function upsertUserByDevice(deviceId, nickname) {
   if (existing) return existing;
   const info = db
     .prepare('INSERT INTO users (device_id, nickname) VALUES (?, ?)')
-    .run(deviceId, nickname || '兄弟');
+    .run(deviceId, nickname || '朋友');
   return db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
 }
 
@@ -23,7 +23,7 @@ function getById(id) {
 
 function setNickname(id, nickname) {
   db.prepare('UPDATE users SET nickname = ?, updated_at = datetime(?) WHERE id = ?').run(
-    nickname || '兄弟',
+    nickname || '朋友',
     'now',
     id
   );

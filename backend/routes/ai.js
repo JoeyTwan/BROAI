@@ -6,7 +6,7 @@ const { saveConversationMessages, createConversation, updateConversation, getUse
 
 const router = express.Router();
 
-const BASE_SYSTEM_PROMPT = `你是"兄弟AI"，一个专门帮家里长辈和不熟练用智能手机的人把模糊想法一步步捋清楚的唠嗑式AI助手。
+const BASE_SYSTEM_PROMPT = `你是"省心聊"，一个专门帮家里长辈和不熟练用智能手机的人把模糊想法一步步捋清楚的唠嗑式AI助手。
 
 行为准则（必须严格遵守）：
 1. 语气永远像她的晚辈/大侄子：温暖、亲切、口语化，绝对不能说专业词、术语。
@@ -14,7 +14,8 @@ const BASE_SYSTEM_PROMPT = `你是"兄弟AI"，一个专门帮家里长辈和不
 3. 遇到用户答"不知道""随便""都行"，不要追问，按常识选一个默认值继续往下。
 4. 不能让用户觉得"我又答错了"。她怎么答都对，永远夸她。
 5. 信息捋清楚后，如果用户选择的场景最终要求输出JSON卡片，你必须输出符合场景结构的纯JSON对象（不要加其他文字），字段必须与被要求的 schema 完全一致。
-6. 如果用户问你是谁，就答："我是你家里兄弟，不清楚咋开口不要紧，想到啥说啥就行，咱慢慢唠。"
+6. 如果用户问你是谁，就答："我是省心聊，你的智能小帮手。想到啥就说啥就行，咱慢慢唠。"
+7. 你可以联网搜索，知道当前最新的信息。如果用户问的事需要查最新的（比如天气、新闻、放假安排），你就查一下再回答。
 `;
 
 const SCENES = {
@@ -121,10 +122,14 @@ function detectScene(text) {
 }
 
 function systemPromptWithContext(sceneKey) {
+  const now = new Date();
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  const timeStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weekdays[now.getDay()]} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const timeLine = `\n【当前时间】${timeStr}。回答时注意时间上下文，比如"下周""最近"是相对于这个时间的。\n`;
   const scene = sceneKey ? SCENES[sceneKey] : null;
-  if (!scene) return BASE_SYSTEM_PROMPT;
+  if (!scene) return BASE_SYSTEM_PROMPT + timeLine;
   return (
-    BASE_SYSTEM_PROMPT +
+    BASE_SYSTEM_PROMPT + timeLine +
     `\n当前场景：${scene.name}。\n追问顺序（严格按此顺序，一次只问一个，跳过已经明确回答过的）：\n` +
     scene.questions.map((q, i) => `${i + 1}. ${q}`).join('\n') +
     `\n当上述信息足够后（用户答"可以了""开始吧"，或你认为 6 个问题里答了 4+ 就够用了），不要再追问，用如下指令生成最终结果：\n${scene.finalPrompt}`
@@ -317,7 +322,7 @@ router.post('/chat', authenticate, protectChat, async (req, res) => {
     res.status(err.status || 502).json({
       success: false,
       error: 'AI_FAILED',
-      message: process.env.NODE_ENV === 'development' ? err.message : '兄弟这会儿卡壳了，待会儿再试试',
+      message: process.env.NODE_ENV === 'development' ? err.message : '这会儿卡壳了，待会儿再试试',
       conversation_id: realConvId
     });
   }

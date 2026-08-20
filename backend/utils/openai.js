@@ -41,7 +41,8 @@ async function sendChatCompletion(messages, opts = {}) {
   const body = {
     model,
     messages,
-    temperature: typeof opts.temperature === 'number' ? opts.temperature : 0.7
+    temperature: typeof opts.temperature === 'number' ? opts.temperature : 0.7,
+    enable_search: true
   };
   if (opts.response_format) body.response_format = opts.response_format;
   const startedAt = Date.now();

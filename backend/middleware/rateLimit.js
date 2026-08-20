@@ -105,7 +105,7 @@ function protectChat(req, res, next) {
     return res.status(429).json({
       success: false,
       error: 'BUDGET_LOCKED',
-      message: '今儿兄弟也累了，明天再来唠哈'
+      message: '今儿聊得够多啦，明天再来唠哈'
     });
   }
   // 设备级限流

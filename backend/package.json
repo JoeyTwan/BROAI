@@ -1,7 +1,7 @@
 {
-  "name": "broai-backend",
+  "name": "shengxinliao-backend",
   "version": "2.0.0",
-  "description": "兄弟AI (BroAI) 后端：给家里人用的智能小助手（SQLite + 设备指纹 + OpenAI 兼容 LLM）",
+  "description": "省心聊后端：给家里人用的智能小助手（SQLite + 设备指纹 + OpenAI 兼容 LLM）",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

@@ -170,7 +170,7 @@ const AdminSetup: React.FC = () => {
       <div className="mx-auto max-w-4xl">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold">兄弟AI · 管理员配置</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold">省心聊 · 管理员配置</h1>
             <p className="mt-2 text-slate-400 text-sm">
               在这里填入你自己的 API Key。填完点「连通测试」，确认没问题再保存。
               <span className="ml-2 inline-flex items-center gap-2">

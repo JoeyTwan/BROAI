@@ -11,7 +11,7 @@ router.get('/me', authenticate, (req, res) => {
     user: {
       id: u.id,
       device_id: u.device_id || req.user.device_id,
-      nickname: u.nickname || '兄弟'
+      nickname: u.nickname || '朋友'
     }
   });
 });

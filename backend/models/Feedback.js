@@ -30,7 +30,7 @@ function getAllFeedback(limit = 50, offset = 0) {
       likes: r.likes,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
-      userNickname: r.nickname || '匿名兄弟'
+      userNickname: r.nickname || '匿名用户'
     }));
 }
 

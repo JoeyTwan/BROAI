@@ -19,7 +19,7 @@ router.post('/', authenticate, async (req, res) => {
   }
   try {
     const data = createFeedback(req.user.id, String(content).slice(0, 2000));
-    res.json({ success: true, data, message: '已提交，兄弟记下了' });
+    res.json({ success: true, data, message: '已提交，记下了' });
   } catch (err) {
     res.status(500).json({ success: false, error: 'FAILED', message: err.message });
   }

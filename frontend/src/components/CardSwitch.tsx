@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import html2canvas from 'html2canvas';
 import type { LetterCard, RecipeCard, TravelCard } from '../types';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -210,11 +211,77 @@ export const LetterCardView: React.FC<{ card: LetterCard }> = ({ card }) => {
   );
 };
 
+const CardShell: React.FC<{ children: React.ReactNode; title: string }> = ({ children, title }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function toCanvas(): Promise<HTMLCanvasElement | null> {
+    if (!ref.current) return null;
+    setSaving(true);
+    try {
+      return await html2canvas(ref.current, {
+        backgroundColor: '#0f172a',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+    } catch { return null; } finally { setSaving(false); }
+  }
+
+  async function saveImage() {
+    const canvas = await toCanvas();
+    if (!canvas) return;
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `省心聊-${title}-${Date.now()}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  }
+
+  async function shareImage() {
+    const canvas = await toCanvas();
+    if (!canvas) return;
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], `省心聊-${title}.png`, { type: 'image/png' });
+      const nav = navigator as any;
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        try { await nav.share({ files: [file], title: '省心聊' }); } catch {}
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `省心聊-${title}-${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }, 'image/png');
+  }
+
+  return (
+    <div className="mt-3 w-full">
+      <div ref={ref}>{children}</div>
+      <div className="mt-3 flex gap-2 flex-wrap">
+        <button onClick={saveImage} disabled={saving} className="bro-btn rounded-xl px-4 py-2 bg-slate-700/60 hover:bg-slate-700 text-sm disabled:opacity-50">
+          {saving ? '正在生成…' : '💾 保存到手机'}
+        </button>
+        <button onClick={shareImage} disabled={saving} className="bro-btn rounded-xl px-4 py-2 bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 text-sm border border-sky-500/30 disabled:opacity-50">
+          📤 转发好友
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const CardSwitch: React.FC<{ card: any }> = ({ card }) => {
   if (!card || !card.type) return null;
-  if (card.type === 'travel') return <TravelCardView card={card} />;
-  if (card.type === 'recipe') return <RecipeCardView card={card} />;
-  if (card.type === 'letter') return <LetterCardView card={card} />;
+  if (card.type === 'travel') return <CardShell title="行程"><TravelCardView card={card} /></CardShell>;
+  if (card.type === 'recipe') return <CardShell title="菜谱"><RecipeCardView card={card} /></CardShell>;
+  if (card.type === 'letter') return <CardShell title="信"><LetterCardView card={card} /></CardShell>;
   return null;
 };
 

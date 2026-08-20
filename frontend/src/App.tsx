@@ -7,13 +7,13 @@ import useSpeech from './hooks/useSpeech';
 import clsx from 'clsx';
 
 function useMe() {
-  const [nickname, setNickname] = useState('兄弟');
+  const [nickname, setNickname] = useState('朋友');
   const [nickEditing, setNickEditing] = useState(false);
   const [nickInput, setNickInput] = useState('');
   async function load() {
     try {
       const { data } = await api.get('/api/auth/me');
-      setNickname(data.user?.nickname || '兄弟');
+      setNickname(data.user?.nickname || '朋友');
     } catch {}
   }
   async function save() {
@@ -207,11 +207,11 @@ export default function App() {
       <header className="sticky top-0 z-10 backdrop-blur-md bg-slate-950/40 border-b border-slate-800/70">
         <div className="mx-auto max-w-6xl px-4 md:px-8 h-16 flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl scene-gradient-travel flex items-center justify-center font-bold text-white shadow-lg">
-            Bro
+            省
           </div>
           <div className="flex-1">
-            <div className="font-semibold leading-tight">兄弟 AI</div>
-            <div className="text-[11px] text-slate-400 leading-tight">家里人专用 · 不用学，直接问</div>
+            <div className="font-semibold leading-tight">省心聊</div>
+            <div className="text-[11px] text-slate-400 leading-tight">想到啥就说啥，聊清楚，办明白</div>
           </div>
 
           {setupReady === false && (
@@ -415,7 +415,7 @@ export default function App() {
       </main>
 
       <footer className="text-center text-xs text-slate-600 py-5 px-4">
-        兄弟 AI · 给家里人用的智能小助手 · 微信扫码即用
+        省心聊 · 想到啥就说啥，聊清楚，办明白
       </footer>
     </div>
   );
@@ -433,7 +433,7 @@ function Avatar({ role }: { role: Message['role'] }) {
   if (role === 'assistant') {
     return (
       <div className="h-9 w-9 shrink-0 rounded-2xl scene-gradient-travel flex items-center justify-center text-white text-sm font-bold shadow-md">
-        Bro
+        省
       </div>
     );
   }
@@ -447,21 +447,24 @@ function Avatar({ role }: { role: Message['role'] }) {
 function MsgBubble({ m }: { m: Message }) {
   if (m.role === 'system') return null;
   const isUser = m.role === 'user';
+  const hasCard = !isUser && !!m.card;
   return (
     <div className={clsx('flex items-start gap-3', isUser ? 'flex-row-reverse' : '')}>
       <Avatar role={m.role} />
       <div className={clsx('max-w-[88%]', isUser ? 'items-end' : 'items-start')}>
-        <div
-          className={clsx(
-            'rounded-2xl px-4 py-3 whitespace-pre-wrap leading-7 text-[15.5px]',
-            isUser
-              ? 'bg-sky-500/90 text-white rounded-tr-sm'
-              : 'bro-card rounded-tl-sm text-slate-100'
-          )}
-        >
-          {m.content || (m.card ? '（查看下面的结果卡片 👇）' : '…')}
-        </div>
-        {m.card && <CardSwitch card={m.card} />}
+        {!hasCard && (
+          <div
+            className={clsx(
+              'rounded-2xl px-4 py-3 whitespace-pre-wrap leading-7 text-[15.5px]',
+              isUser
+                ? 'bg-sky-500/90 text-white rounded-tr-sm'
+                : 'bro-card rounded-tl-sm text-slate-100'
+            )}
+          >
+            {m.content || '…'}
+          </div>
+        )}
+        {hasCard && <CardSwitch card={m.card} />}
       </div>
     </div>
   );

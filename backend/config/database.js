@@ -18,7 +18,7 @@ function init() {
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   device_id TEXT UNIQUE NOT NULL,
-  nickname TEXT DEFAULT '兄弟',
+  nickname TEXT DEFAULT '朋友',
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -128,7 +128,7 @@ init();
     const next = UPGRADE_MAP[current];
     db.prepare("UPDATE app_config SET value = ?, updated_at = datetime('now') WHERE key = 'llm.model'")
       .run(JSON.stringify(next));
-    console.log(`[broai] 模型自动升级：${current} → ${next}`);
+    console.log(`[省心聊] 模型自动升级：${current} → ${next}`);
   }
 })();
 
