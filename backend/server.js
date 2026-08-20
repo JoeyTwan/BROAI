@@ -1,4 +1,5 @@
 require('dotenv').config();
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
@@ -84,10 +85,15 @@ app.get('/health', (_req, res) => {
   });
 });
 
-if (process.env.NODE_ENV === 'production') {
-  const frontendBuildPath = path.join(__dirname, '../frontend/dist');
+const frontendBuildPath = path.join(__dirname, '../frontend/dist');
+if (fs.existsSync(frontendBuildPath) && fs.existsSync(path.join(frontendBuildPath, 'index.html'))) {
   console.log(`[省心聊] 提供前端静态文件：${frontendBuildPath}`);
-  app.use(express.static(frontendBuildPath));
+  app.use(express.static(frontendBuildPath, {
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('.css')) res.setHeader('Content-Type', 'text/css; charset=utf-8');
+      if (filePath.endsWith('.js')) res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    }
+  }));
   app.get(/^\/(?!api).*/, (_req, res) => {
     res.sendFile(path.join(frontendBuildPath, 'index.html'));
   });
@@ -97,6 +103,7 @@ if (process.env.NODE_ENV === 'production') {
       name: '省心聊 Backend API',
       version: '2.0.0',
       status: 'running',
+      hint: '未找到前端构建产物，请到 frontend 目录执行 npm run build',
       endpoints: {
         me: '/api/auth/me',
         ai: '/api/ai/chat',
