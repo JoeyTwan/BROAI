@@ -23,9 +23,28 @@ require('./config/database');
 
 app.use(helmet({
   contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(compression());
+
+const frontendBuildPath = path.join(__dirname, '../frontend/dist');
+const distReady = fs.existsSync(frontendBuildPath) && fs.existsSync(path.join(frontendBuildPath, 'index.html'));
+if (distReady) {
+  console.log(`[省心聊] 提供前端静态文件：${frontendBuildPath}`);
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/assets/') || req.path === '/' || req.path.endsWith('.svg') || req.path.endsWith('.png') || req.path.endsWith('.ico')) {
+      return express.static(frontendBuildPath, {
+        setHeaders(res2, filePath) {
+          if (filePath.endsWith('.css')) res2.setHeader('Content-Type', 'text/css; charset=utf-8');
+          if (filePath.endsWith('.js')) res2.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+          res2.setHeader('Cache-Control', filePath.includes('index-') ? 'public, max-age=31536000, immutable' : 'no-cache');
+        }
+      })(req, res, next);
+    }
+    next();
+  });
+}
 
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map((u) => u.trim())
@@ -85,17 +104,10 @@ app.get('/health', (_req, res) => {
   });
 });
 
-const frontendBuildPath = path.join(__dirname, '../frontend/dist');
-if (fs.existsSync(frontendBuildPath) && fs.existsSync(path.join(frontendBuildPath, 'index.html'))) {
-  console.log(`[省心聊] 提供前端静态文件：${frontendBuildPath}`);
-  app.use(express.static(frontendBuildPath, {
-    setHeaders(res, filePath) {
-      if (filePath.endsWith('.css')) res.setHeader('Content-Type', 'text/css; charset=utf-8');
-      if (filePath.endsWith('.js')) res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    }
-  }));
+const frontendBuildPath_ = path.join(__dirname, '../frontend/dist');
+if (distReady) {
   app.get(/^\/(?!api).*/, (_req, res) => {
-    res.sendFile(path.join(frontendBuildPath, 'index.html'));
+    res.sendFile(path.join(frontendBuildPath_, 'index.html'));
   });
 } else {
   app.get('/', (_req, res) => {
