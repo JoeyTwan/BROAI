@@ -98,6 +98,20 @@ cd ../backend && npm start
 
 配置完成后，访问 `http://localhost:4000/qrcode` 生成二维码，发给你妈。
 
+### 小程序版部署
+
+项目自带微信小程序（个人主体即可），用户搜索名字或点分享链接就能用，不需要扫码。
+
+```bash
+# 1. 用微信开发者工具打开 miniapp/ 目录
+# 2. 填入你的 AppID（已在 project.config.json 里）
+# 3. 修改 miniapp/app.js 里的 apiBase 为你的后端地址
+# 4. 点击编译 → 预览 → 真机调试
+# 5. 提交审核 → 上线后搜索「省心聊」即可
+```
+
+小程序使用微信同声传译插件实现语音输入和语音朗读，无需额外接入语音服务。
+
 ### 管理员配置说明
 
 | 配置项 | 说明 |
@@ -119,7 +133,7 @@ cd ../backend && npm start
 | 数据库 | SQLite（单文件，零运维） |
 | AI | OpenAI 兼容协议（阿里云百炼 / DeepSeek / 硅基流动 均可） |
 | 鉴权 | 设备指纹（无注册无登录） |
-| 语音 | Web Speech API（浏览器原生） |
+| 语音 | Web Speech API（网页）/ 微信同声传译插件（小程序） |
 
 ## 项目结构
 
@@ -152,6 +166,15 @@ BROAI/
 │   │   │   └── QrCode.tsx       # 二维码分享页
 │   │   └── types.ts
 │   └── index.html
+├── miniapp/                      # 微信小程序（原生开发）
+│   ├── app.js / app.json / app.wxss
+│   ├── project.config.json      # AppID 配置
+│   ├── utils/
+│   │   ├── api.js               # 请求封装
+│   │   └── voice.js              # 语音识别 + TTS（同声传译插件）
+│   └── pages/
+│       ├── index/               # 首页：场景 + 聊天 + 卡片
+│       └── admin/               # 管理员配置
 └── README.md
 ```
 

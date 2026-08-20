@@ -1,0 +1,58 @@
+<view class="admin-container">
+  <view class="status-badge {{ready ? 'badge-ok' : 'badge-warn'}}">
+    {{ready ? '✅ 已配置，可以用了' : '⚠️ 还没配置 API Key'}}
+  </view>
+
+  <view class="section">
+    <text class="section-title">选一个大模型服务商</text>
+    <view class="presets">
+      <view wx:for="{{presets}}" wx:key="name" class="preset-card {{index === activePreset ? 'preset-active' : ''}}" bindtap="onPresetTap" data-idx="{{index}}">
+        <text class="preset-name">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <text class="section-title">API 地址（Base URL）</text>
+    <input class="input" value="{{baseUrl}}" bindinput="onInput" data-field="baseUrl" placeholder="https://..." />
+  </view>
+
+  <view class="section">
+    <text class="section-title">API Key</text>
+    <input class="input" value="{{apiKey}}" bindinput="onInput" data-field="apiKey" placeholder="sk-..." password />
+  </view>
+
+  <view class="section">
+    <text class="section-title">模型名称</text>
+    <input class="input" value="{{model}}" bindinput="onInput" data-field="model" placeholder="qwen3.7-plus" />
+  </view>
+
+  <view class="section-row">
+    <view class="section half">
+      <text class="section-title">输入价格（元/千token）</text>
+      <input class="input" type="digit" value="{{inputPrice}}" bindinput="onInput" data-field="inputPrice" />
+    </view>
+    <view class="section half">
+      <text class="section-title">输出价格（元/千token）</text>
+      <input class="input" type="digit" value="{{outputPrice}}" bindinput="onInput" data-field="outputPrice" />
+    </view>
+  </view>
+
+  <view class="section-row">
+    <view class="section half">
+      <text class="section-title">单日预算（分）</text>
+      <input class="input" type="number" value="{{budgetCents}}" bindinput="onInput" data-field="budgetCents" />
+    </view>
+    <view class="section half">
+      <text class="section-title">每台手机日限</text>
+      <input class="input" type="number" value="{{deviceDayCap}}" bindinput="onInput" data-field="deviceDayCap" />
+    </view>
+  </view>
+
+  <text class="test-result" wx:if="{{testResult}}">{{testResult}}</text>
+
+  <view class="actions">
+    <button class="btn-test" bindtap="onTest" loading="{{testing}}" disabled="{{testing}}">连通测试</button>
+    <button class="btn-save" bindtap="onSave" loading="{{loading}}" disabled="{{loading}}">保存配置</button>
+  </view>
+</view>

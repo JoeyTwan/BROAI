@@ -1,0 +1,27 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/admin/admin"
+  ],
+  "window": {
+    "navigationBarTitleText": "省心聊",
+    "navigationBarBackgroundColor": "#0f172a",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#0f172a",
+    "backgroundTextStyle": "dark"
+  },
+  "plugins": {
+    "WechatSI": {
+      "version": "0.3.4",
+      "provider": "wx069ba97219f4d4e0"
+    }
+  },
+  "permission": {
+    "record": {
+      "desc": "您说话，我帮您办事"
+    }
+  },
+  "requiredPrivateInfos": [],
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

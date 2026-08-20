@@ -1,0 +1,143 @@
+<view class="container">
+  <view class="setup-warn" wx:if="{{!setupReady}}">
+    管理员还没配置好 API Key，请先联系管理员
+  </view>
+
+  <!-- 场景选择 -->
+  <view class="scenes-wrap" wx:if="{{!messages.length}}">
+    <view class="welcome">
+      <text class="welcome-title">想让我帮你做点啥？</text>
+      <text class="welcome-desc">你说不清楚没关系，我会一步一步问你。</text>
+    </view>
+
+    <view class="scenes">
+      <view wx:for="{{scenes}}" wx:key="key" class="scene-card {{item.cls}}" bindtap="onSceneTap" data-key="{{item.key}}">
+        <text class="scene-emoji">{{item.emoji}}</text>
+        <text class="scene-name">{{item.name}}</text>
+        <text class="scene-desc">{{item.desc}}</text>
+      </view>
+    </view>
+
+    <view class="chips-wrap card">
+      <text class="chips-title">也可以直接点下面，我替你开个头：</text>
+      <view class="chips">
+        <view wx:for="{{chips}}" wx:key="*this" class="chip" bindtap="onChipTap" data-text="{{item}}">{{item}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 聊天消息列表 -->
+  <scroll-view class="chat-area" scroll-y scroll-into-view="{{scrollToView}}" wx:if="{{messages.length}}">
+    <view class="msg-list">
+      <view wx:for="{{messages}}" wx:key="index" class="msg-item {{item.role === 'user' ? 'msg-user' : 'msg-ai'}}">
+        <view class="avatar ai-avatar" wx:if="{{item.role === 'assistant'}}">省</view>
+        <view class="msg-bubble {{item.role === 'user' ? 'bubble-user' : 'bubble-ai'}}">
+          <!-- 有卡片时不显示文字 -->
+          <block wx:if="{{item.role === 'assistant' && item.card}}">
+            <view class="card-container">
+              <text class="card-title">{{item.card.title}}</text>
+
+              <!-- 行程卡片 -->
+              <block wx:if="{{item.card.type === 'travel'}}">
+                <view class="card-info">📍 {{item.card.destination}} · {{item.card.days}}天</view>
+                <view class="card-section" wx:if="{{item.card.dailyPlan}}">
+                  <text class="section-title">每日安排</text>
+                  <view wx:for="{{item.card.dailyPlan}}" wx:for-item="d" wx:key="day" class="day-plan">
+                    <view class="day-header">
+                      <text class="day-badge">{{d.day}}</text>
+                      <text class="day-title">{{d.title}}</text>
+                    </view>
+                    <view class="day-body">
+                      <view wx:if="{{d.morning}}"><text class="time-label">上午：</text>{{d.morning}}</view>
+                      <view wx:if="{{d.noon}}"><text class="time-label">中午：</text>{{d.noon}}</view>
+                      <view wx:if="{{d.afternoon}}"><text class="time-label">下午：</text>{{d.afternoon}}</view>
+                      <view wx:if="{{d.evening}}"><text class="time-label">晚上：</text>{{d.evening}}</view>
+                    </view>
+                    <view wx:if="{{d.tips}}" class="day-tips">⚠️ {{d.tips}}</view>
+                  </view>
+                </view>
+                <view class="card-section" wx:if="{{item.card.packingList}}">
+                  <text class="section-title">要带的东西</text>
+                  <view class="chip-list">
+                    <text wx:for="{{item.card.packingList}}" wx:key="*this" class="tag">{{item}}</text>
+                  </view>
+                </view>
+                <view class="card-section" wx:if="{{item.card.tips}}">
+                  <text class="section-title">贴心提醒</text>
+                  <view wx:for="{{item.card.tips}}" wx:key="*this" class="tip-item">🔸 {{item}}</view>
+                </view>
+              </block>
+
+              <!-- 菜谱卡片 -->
+              <block wx:if="{{item.card.type === 'recipe'}}">
+                <view class="card-info">
+                  <text wx:if="{{item.card.serving}}">👥 {{item.card.serving}}  </text>
+                  <text wx:if="{{item.card.difficulty}}">📈 {{item.card.difficulty}}  </text>
+                  <text wx:if="{{item.card.timeMinutes}}">⏱ {{item.card.timeMinutes}}分钟</text>
+                </view>
+                <view class="card-section" wx:if="{{item.card.ingredients}}">
+                  <text class="section-title">食材</text>
+                  <view wx:for="{{item.card.ingredients}}" wx:key="name" class="ingredient-row">
+                    <text>{{item.name}}</text>
+                    <text class="amount">{{item.amount}}</text>
+                  </view>
+                </view>
+                <view class="card-section" wx:if="{{item.card.steps}}">
+                  <text class="section-title">做法</text>
+                  <view wx:for="{{item.card.steps}}" wx:key="order" class="step-row">
+                    <view class="step-header">
+                      <text class="step-num">{{item.order}}</text>
+                      <text class="step-title">{{item.title}}</text>
+                    </view>
+                    <text class="step-detail">{{item.detail}}</text>
+                  </view>
+                </view>
+              </block>
+
+              <!-- 写信卡片 -->
+              <block wx:if="{{item.card.type === 'letter'}}">
+                <view class="card-info">收件人：{{item.card.recipient}}</view>
+                <view class="letter-content">
+                  <text wx:if="{{item.card.greeting}}" class="letter-para">{{item.card.greeting}}</text>
+                  <text wx:for="{{item.card.paragraphs}}" wx:key="*this" class="letter-para">{{item}}</text>
+                  <text wx:if="{{item.card.endingSpoken}}" class="letter-para">{{item.card.endingSpoken}}</text>
+                  <text wx:if="{{item.card.signature}}" class="letter-sig">—— {{item.card.signature}}</text>
+                </view>
+                <view class="letter-actions">
+                  <button size="mini" bindtap="onCopyText" data-text="{{item.card.wechatText || item.card.greeting}}">📋 复制</button>
+                  <button size="mini" open-type="share">📤 转发好友</button>
+                </view>
+              </block>
+            </view>
+          </block>
+
+          <text wx:elif="{{item.content}}">{{item.content}}</text>
+          <text wx:else>…</text>
+        </view>
+      </view>
+
+      <view class="msg-item msg-ai" wx:if="{{loading}}">
+        <view class="avatar ai-avatar">省</view>
+        <view class="msg-bubble bubble-ai">
+          <view class="typing">
+            <view class="dot"></view>
+            <view class="dot"></view>
+            <view class="dot"></view>
+          </view>
+        </view>
+      </view>
+
+      <view id="msg-bottom" style="height: 20rpx;"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 输入区 -->
+  <view class="input-bar" wx:if="{{messages.length || setupReady}}">
+    <view class="input-row">
+      <view class="mic-btn {{listening ? 'mic-active' : ''}}" bindtap="onMicTap">{{listening ? '🔴' : '🎙️'}}</view>
+      <textarea class="input-field" value="{{input}}" bindinput="onInput" placeholder="想到啥说啥，说不清楚也没关系" placeholder-class="input-ph" auto-height maxlength="-1" />
+      <view class="speak-btn" bindtap="onSpeakTap">🔊</view>
+      <view class="send-btn {{(!input || loading) ? 'send-disabled' : ''}}" bindtap="onSend">发送</view>
+    </view>
+  </view>
+</view>

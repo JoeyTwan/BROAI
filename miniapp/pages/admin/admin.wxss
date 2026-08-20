@@ -1,0 +1,94 @@
+.admin-container {
+  padding: 32rpx 24rpx 120rpx;
+}
+
+.status-badge {
+  padding: 20rpx 32rpx;
+  border-radius: 20rpx;
+  text-align: center;
+  font-size: 28rpx;
+  margin-bottom: 40rpx;
+}
+.badge-ok {
+  background: rgba(16,185,129,0.15);
+  border: 1px solid rgba(16,185,129,0.3);
+  color: #6ee7b7;
+}
+.badge-warn {
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: #fcd34d;
+}
+
+.section {
+  margin-bottom: 32rpx;
+}
+.section-row {
+  display: flex;
+  gap: 24rpx;
+}
+.section.half {
+  flex: 1;
+}
+.section-title {
+  display: block;
+  font-size: 26rpx;
+  color: #94a3b8;
+  margin-bottom: 12rpx;
+}
+
+.presets {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+.preset-card {
+  padding: 24rpx 32rpx;
+  border-radius: 20rpx;
+  border: 1px solid rgba(51,65,85,0.6);
+  background: rgba(15,23,42,0.5);
+}
+.preset-active {
+  border-color: #0ea5e9;
+  background: rgba(14,165,233,0.1);
+}
+.preset-name {
+  font-size: 30rpx;
+  color: #e2e8f0;
+}
+
+.input {
+  background: rgba(15,23,42,0.6);
+  border: 1px solid rgba(51,65,85,0.6);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  color: #f8fafc;
+  font-size: 30rpx;
+}
+
+.test-result {
+  display: block;
+  text-align: center;
+  font-size: 30rpx;
+  margin: 24rpx 0;
+}
+
+.actions {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 40rpx;
+}
+.btn-test {
+  flex: 1;
+  background: rgba(51,65,85,0.6);
+  color: #e2e8f0;
+  border-radius: 20rpx;
+  font-size: 32rpx;
+}
+.btn-save {
+  flex: 1;
+  background: #0ea5e9;
+  color: #fff;
+  border-radius: 20rpx;
+  font-size: 32rpx;
+}

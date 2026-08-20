@@ -1,0 +1,24 @@
+page {
+  background: linear-gradient(160deg, #0f172a 0%, #1e293b 45%, #0b1220 100%);
+  color: #f8fafc;
+  font-family: -apple-system, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  min-height: 100vh;
+}
+
+.card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(148,163,184,0.18);
+  border-radius: 24rpx;
+}
+
+.btn-primary {
+  background: #0ea5e9;
+  color: #fff;
+  border-radius: 24rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.scene-travel { background: linear-gradient(135deg, #0ea5e9 0%, #22d3ee 60%, #38bdf8 100%); }
+.scene-recipe { background: linear-gradient(135deg, #f97316 0%, #fb7185 60%, #f59e0b 100%); }
+.scene-letter { background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 60%, #ec4899 100%); }
