@@ -134,9 +134,9 @@
   <!-- 输入区 -->
   <view class="input-bar" wx:if="{{messages.length || setupReady}}">
     <view class="input-row">
-      <view class="mic-btn {{listening ? 'mic-active' : ''}}" bindtap="onMicTap">{{listening ? '🔴' : '🎙️'}}</view>
+      <view class="mic-btn {{listening ? 'mic-active' : ''}} {{voiceSupported ? '' : 'mic-disabled'}}" bindtap="onMicTap">{{listening ? '🔴' : '🎙️'}}</view>
       <textarea class="input-field" value="{{input}}" bindinput="onInput" placeholder="想到啥说啥，说不清楚也没关系" placeholder-class="input-ph" auto-height maxlength="-1" />
-      <view class="speak-btn" bindtap="onSpeakTap">🔊</view>
+      <view class="speak-btn {{voiceSupported ? '' : 'mic-disabled'}}" bindtap="onSpeakTap">🔊</view>
       <view class="send-btn {{(!input || loading) ? 'send-disabled' : ''}}" bindtap="onSend">发送</view>
     </view>
   </view>

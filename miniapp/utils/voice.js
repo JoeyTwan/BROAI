@@ -1,6 +1,24 @@
-const plugin = requirePlugin('WechatSI')
+let plugin = null
+try {
+  plugin = requirePlugin('WechatSI')
+} catch (e) {
+  plugin = null
+}
 
 function createVoice() {
+  if (!plugin) {
+    return {
+      supported: false,
+      startListening() {
+        wx.showToast({ title: '当前环境不支持语音输入，请打字', icon: 'none' })
+      },
+      stopListening() {},
+      speak(text) {
+        wx.showToast({ title: '当前环境不支持语音朗读', icon: 'none' })
+      }
+    }
+  }
+
   const manager = plugin.getRecordRecognitionManager()
   let onResult = null
   let onEnd = null
@@ -37,11 +55,12 @@ function createVoice() {
       },
       fail(err) {
         console.error('语音合成失败', err)
+        wx.showToast({ title: '语音合成失败', icon: 'none' })
       }
     })
   }
 
-  return { startListening, stopListening, speak }
+  return { supported: true, startListening, stopListening, speak }
 }
 
 module.exports = { createVoice }

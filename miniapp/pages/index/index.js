@@ -10,6 +10,7 @@ Page({
     listening: false,
     activeScene: '',
     scrollToView: '',
+    voiceSupported: true,
     scenes: [
       { key: 'travel', name: '做个行程', emoji: '🧳', desc: '去哪玩、几天、花多少钱', cls: 'scene-travel' },
       { key: 'recipe', name: '做个菜谱', emoji: '🍲', desc: '家里有啥，我教你做', cls: 'scene-recipe' },
@@ -26,6 +27,7 @@ Page({
 
   onLoad() {
     this.voice = createVoice()
+    this.setData({ voiceSupported: !!this.voice.supported })
     this.checkSetup()
   },
 

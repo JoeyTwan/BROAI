@@ -10,12 +10,6 @@
     "backgroundColor": "#0f172a",
     "backgroundTextStyle": "dark"
   },
-  "plugins": {
-    "WechatSI": {
-      "version": "0.3.4",
-      "provider": "wx069ba97219f4d4e0"
-    }
-  },
   "permission": {
     "record": {
       "desc": "您说话，我帮您办事"
